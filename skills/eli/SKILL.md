@@ -1,12 +1,21 @@
 ---
-name: ccbot-setup
-description: Install and configure CCBot — Telegram remote control for Claude Code. Two modes: full-auto (Claude does everything) or guided (user controls each step). Use when user says "install ccbot", "setup ccbot", "התקן ccbot", or "ccbot setup".
-argument-hint: [auto|guided]
+name: eli
+description: Eli — your Claude Code expert. Install CCBot, get tips, best practices, and opinions from someone who spends $1,000/month on Opus. Use when user says "eli", "eli help", "eli install", "eli setup", "eli what do you think", "install ccbot", "setup ccbot", "התקן ccbot".
+argument-hint: [install ccbot|help|what do you think]
 ---
 
-# CCBot Setup Skill
+# eli — Your Claude Code Expert
 
-Install and configure CCBot so users can control Claude Code sessions remotely from Telegram.
+By [Eli Groman](https://www.linkedin.com/in/eli-grumman-495b0636/) — deaf developer, Claude Code power user, $1,000+/month on Opus.
+
+## What I Can Help With
+
+- **Install CCBot** — Telegram remote control for Claude Code (the main feature)
+- **Claude Code tips** — best practices from 6+ months of daily Opus usage
+- **Skills guidance** — how to build and structure Claude Code skills
+- **Setup recommendations** — always-on machines, MCP servers, permissions
+
+## CCBot Installation
 
 ## First Interaction
 
@@ -209,9 +218,10 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Then follow the regular CCBot setup
 ```
 
-**Caveat**: VPS means no local GUI — you'll authenticate via API key instead of browser OAuth.
-
-> **Security warning:** Some guides suggest using `--dangerously-skip-permissions`. This skips ALL permission prompts — Claude can delete files, run any command, and modify your system without asking. Only use this if you fully understand the risks and the machine is isolated.
+**Caveat**: VPS means no local GUI — you'll authenticate via API key instead of browser OAuth. For dangerously-skip-permissions on a VPS:
+```
+CLAUDE_COMMAND=claude --dangerously-skip-permissions
+```
 
 ### Option 3: Cloud Mac (~$100/month)
 

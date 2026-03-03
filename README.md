@@ -1,8 +1,8 @@
-# Telegram Agents Master
+# eli
 
-**Manage multiple Claude Code agents from Telegram. 24/7. From any phone.**
+**Your Claude Code expert. As a skill.**
 
-> You have a team of AI agents. Now control them from your pocket.
+> Install it. Type "eli help me". That's it.
 
 ---
 
@@ -23,7 +23,7 @@ You're running Claude Code on a powerful machine — but you're not always sitti
 
 **CCBot** is a thin layer on top of tmux. It reads terminal output and sends keystrokes. Your terminal stays the source of truth. 1 Telegram topic = 1 tmux window = 1 Claude Code session.
 
-This repo gives you a **Claude Code skill** that installs and configures the entire setup — automatically.
+This repo gives you **eli** — a Claude Code skill that installs and configures the entire setup automatically. Built by [Eli Groman](https://www.linkedin.com/in/eli-grumman-495b0636/), who spends $1,000+/month on Opus so you don't have to figure this out alone.
 
 ---
 
@@ -32,20 +32,20 @@ This repo gives you a **Claude Code skill** that installs and configures the ent
 One command. Paste this into Claude Code:
 
 ```
-/skill install github:eligrumman/telegram-agents-master
+/skill install github:eligrumman/eli-skill
 ```
 
 Or manually:
 
 ```bash
-git clone https://github.com/eligrumman/telegram-agents-master.git
-cp -r telegram-agents-master/skills/ccbot-setup ~/.claude/skills/
+git clone https://github.com/eligrumman/eli-skill.git
+cp -r eli-skill/skills/ccbot-setup ~/.claude/skills/
 ```
 
 Then tell your agent:
 
 ```
-install ccbot
+eli help me install ccbot
 ```
 
 ---
@@ -229,10 +229,10 @@ Yes. Each Telegram topic is a separate Claude Code session. Open 3 topics = 3 ag
 ## What's Inside
 
 ```
-telegram-agents-master/
+eli-skill/
 ├── skills/
-│   └── ccbot-setup/
-│       └── SKILL.md          # The Claude Code skill (auto + guided modes)
+│   └── eli/
+│       └── SKILL.md          # The "eli" skill (auto + guided modes)
 ├── docs/
 │   └── setup-guide-he.md     # Full Hebrew setup guide (10 steps)
 ├── install.sh                # One-liner installer
