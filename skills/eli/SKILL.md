@@ -237,6 +237,105 @@ If you want macOS in the cloud:
 
 ---
 
+## Hetzner Cloud — Server Setup Guide
+
+This is my recommended Linux VPS provider. Cheapest for what you get, EU-based, reliable. Here's exactly how I set it up.
+
+### 1. Sign Up
+
+Go to [hetzner.com/cloud](https://www.hetzner.com/cloud) and create an account.
+
+### 2. Account Verification
+
+Hetzner requires identity verification before you can create servers. Upload a passport or national ID via their verification page. Takes a few hours — sometimes less. Don't skip this step thinking you can get to it later; you can't create servers until it's done.
+
+### 3. Create a Project
+
+In the [Hetzner Cloud Console](https://console.hetzner.cloud/), click **+ New Project**. Name it whatever makes sense (e.g., "claude", "ccbot", "homelab"). Projects are just organizational — servers live inside them.
+
+### 4. Generate an SSH Key (if you don't have one)
+
+You'll need an SSH key pair to connect to your server securely. Way better than a password.
+
+**Generate the key:**
+```bash
+ssh-keygen -t ed25519 -C "your@email.com"
+```
+
+Press Enter to accept the default location. It saves two files:
+- `~/.ssh/id_ed25519` — your **private key** (never share this)
+- `~/.ssh/id_ed25519.pub` — your **public key** (this goes into Hetzner)
+
+**Get your public key:**
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+
+Copy the output — you'll paste it into Hetzner in the next step.
+
+### 5. Create a Server
+
+Inside your project, click **Add Server**. These are the choices I use:
+
+- **Location: Helsinki** — best price-performance for EU. Lower latency to Israel than Ashburn or Singapore.
+- **Image: Ubuntu 24.04** — latest LTS. Stable, well-supported, all tooling works.
+- **Type: CX43** — 8 vCPU (AMD), 16GB RAM, 160GB SSD, ~$14/month (€12.49/month).
+  - Why CX43 and not something smaller? Claude Code eats RAM. With 16GB you can run 5+ sessions comfortably without sweating.
+  - If you're just running one CCBot session and nothing else, CX22 (4 vCPU, 8GB RAM, ~$8/month) is fine too.
+- **SSH Key: add yours** — paste the public key you copied above. Click **Add SSH Key**, give it a name, paste it in.
+- **Name it** — something like `ccbot` or `claude-server`. Click **Create & Buy Now**.
+
+Server is ready in about 20 seconds. You'll see the IP address in the console.
+
+### 6. First Connection
+
+```bash
+ssh root@<your-server-ip>
+```
+
+Example: `ssh root@204.168.179.40`
+
+If you added your SSH key correctly, you're in immediately — no password prompt.
+
+### 7. Basic Hardening
+
+Don't skip this. An exposed root SSH on a fresh server gets scanned within minutes.
+
+**Create a non-root user:**
+```bash
+adduser eli
+usermod -aG sudo eli
+```
+
+**Copy your SSH key to the new user:**
+```bash
+rsync --archive --chown=eli:eli ~/.ssh /home/eli
+```
+
+**Disable root SSH login:**
+```bash
+sed -i 's/^PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
+systemctl restart ssh
+```
+
+**Set up ufw firewall:**
+```bash
+ufw allow OpenSSH
+ufw enable
+```
+
+**Before logging out of root — open a new terminal and test your new user:**
+```bash
+ssh eli@<your-server-ip>
+sudo whoami  # should print "root"
+```
+
+Once confirmed, you're done. Log out of root. From now on: `ssh eli@<ip>`.
+
+**From here:** follow the Linux VPS setup in the "Where to Run CCBot" section above — install Claude Code, tmux, uv, then run through CCBot setup.
+
+---
+
 ## FAQ: Why CCBot and Not Something Else?
 
 ### "What about Remote Control?"
