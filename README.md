@@ -2,7 +2,7 @@
 
 **Your Claude Code expert. As a skill.**
 
-> Install it. Type "eli help me". That's it.
+> Install it. Type "eli walk me". That's it.
 
 ---
 
@@ -90,14 +90,14 @@ curl -fsSL https://raw.githubusercontent.com/eligrumman/eli-skill/main/install.s
 Then tell your agent:
 
 ```
-eli setup
+eli walk me
 ```
 
 ---
 
 ## What Happens Next
 
-`eli setup` walks you through the whole thing, in order:
+First it asks where to run your agents — an old MacBook you already own, a Mac Mini, or a cloud server (Hetzner, ~$8–14/mo). Then `eli walk me` walks you through the whole thing, step by step:
 
 1. **Provision a server** — Hetzner Cloud, Ubuntu 24.04, a non-root sudo user.
 2. **SSH keys** — generate a keypair on your phone *and* your Mac; both public keys go on the server. Private keys never leave your devices.
@@ -168,7 +168,7 @@ Key discipline that keeps a fleet sane:
 
 | Requirement | Why |
 |---|---|
-| **Claude Code Max subscription** | Opus access — no Opus, no team |
+| **Claude subscription** | a Claude Code plan (Pro or Max) for each machine running agents |
 | **A cloud server** (or any always-on box) | Runs the agents 24/7 |
 | **Tailscale account** | Reach the server privately from anywhere |
 | **A phone with an SSH app** (Android → Termux; iPhone → Termius) | Your remote control |

@@ -1,6 +1,6 @@
 ---
 name: eli
-description: Eli — your Claude Code expert. Set up a cloud fleet of Claude Code agents you drive from your phone over SSH + Tailscale, plus tips, best practices, and opinions from someone who has been an expert with Claude Code for over a year, building and running autonomous agents locally and in the cloud. Use when user says "eli", "eli help", "eli setup", "eli what do you think", "set up agents on a server", "run claude code from my phone", "התקן אייג'נטים בענן".
+description: Eli — your Claude Code expert. Set up a cloud fleet of Claude Code agents you drive from your phone over SSH + Tailscale, plus tips and best practices from an Agentic AI Team Lead who runs autonomous Claude Code agents daily. Use when user says "eli", "eli walk me", "eli help", "eli what do you think", "set up agents on a server", "run claude code from my phone", "התקן אייג'נטים בענן".
 argument-hint: [setup|help|what do you think]
 ---
 
@@ -43,11 +43,11 @@ All IPs, usernames, and hostnames below are placeholders: `<SERVER_IP>`, `<USER>
 
 ## First Interaction
 
-When triggered with "setup", confirm the plan and walk the user through the six steps below in order. Ask which machines they have (server? Mac? just a phone?) and adapt — the Mac is optional; the server and phone are the core. Wait for confirmation between steps that require the user to act (creating the server, pasting keys, logging into Tailscale).
+When triggered with "walk me" (or "setup"/"help"), confirm the plan and walk the user through the six steps below in order. **First ask where to run their agents** — an old MacBook they already own, a Mac Mini, or a cloud server (Hetzner, ~$8–14/mo) — tying it to "Choosing Your Machine: Mac vs Hetzner" below, then adapt (the Mac is optional; the server and phone are the core). A good opener: "First I'll ask where to run your agents — an old MacBook, a Mac Mini, or a cloud server — then walk you through the rest." Wait for confirmation between steps that require the user to act (creating the server, pasting keys, logging into Tailscale).
 
 ## Prerequisites
 
-- **Claude Code Max subscription** (required for Opus)
+- **A Claude Code subscription** (Pro or Max)
 - **A cloud provider account** (Hetzner recommended) — or any always-on machine you already own
 - **A Tailscale account** (free tier is plenty)
 - **A phone with an SSH client app** — Android → Termux (or Termius); iPhone → Termius
