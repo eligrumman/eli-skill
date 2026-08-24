@@ -14,6 +14,7 @@ All server IPs, usernames, and hostnames below are placeholders like `<SERVER_IP
 > - **SSH client app** — the app on your phone you use to run SSH. **Android → Termux** (or Termius); **iPhone → Termius**. (Explained with download links in step 2.)
 > - **SSH key (public / private)** — a passwordless login. You generate a **key pair**: the **private** key stays secret on your device, the **public** key gets copied to the server. Anyone holding the matching private key can log in, so you never share it.
 > - **Tailscale / VPN** — a private network that lets your phone reach your server from anywhere, without exposing it to the public internet. (Explained in step 3.)
+> - **Tailnet** — your own private network of Tailscale devices: everything signed into the same Tailscale account, reachable by its `100.x.y.z` address.
 > - **VNC / Screen Sharing** — seeing and controlling the server's actual desktop screen remotely, for when a command line isn't enough (a browser login, a GUI app).
 > - **`claude agents`** — the Claude Code command that shows *all* your running sessions, across every project, in one screen. Your daily entry point.
 
@@ -39,25 +40,27 @@ Before you provision anything, decide where the agents will live. Two honest opt
 
 | | **Mac** (old MacBook / Mac Mini you own) | **Hetzner** (Linux cloud server) |
 |---|---|---|
-| Cost | **Free** — your own hardware, no monthly bill | ~$15/month |
+| Cost | **Free** — your own hardware, no monthly bill | from ~€6.80/mo (≈ $7.50) up to ~€16.40/mo (≈ $18) |
 | Uptime | Depends on your home network + power; you're the one keeping it alive | Built for uptime: higher speed, better stability, independent of your home network |
 | Best for | Mac-only apps that don't exist on Linux; a GUI/browser on the box | Always-on loops / agents that must never go down and shouldn't depend on your house's internet or power |
 
 **Both are valid, and many people run both:** Linux/Hetzner for the always-up fleet, a Mac for GUI/browser/Mac-app work. Pick based on what you need.
 
-**Which should I pick?** Want a set-and-forget, always-on fleet that never depends on your home? Go **Hetzner**. Already own a Mac and want a free box you can also see the screen of (GUI, browser, Mac apps)? Run it on the **Mac** — just keep it plugged in and awake (see "Running the server on a Mac" below).
+**Which should I pick?** Want a set-and-forget, always-on fleet that never depends on your home? Go **Hetzner**. Already own a Mac and want a free box you can also see the screen of (GUI, browser, Mac apps)? Run it on the **Mac** — just turn on Remote Login and keep it plugged in and awake (see "Running the server on a Mac" below).
 
 ---
 
 ## 1. Provision the server (Hetzner Cloud)
 
+> **Do these two things first:** (1) **Hetzner requires identity verification** before you can create servers — upload a passport or national ID via their verification page. It can take a few hours, so start it now. (2) The creation screen asks you to paste an SSH **public key** — so jump ahead to step 2, generate your keys, then come back. (The key you paste at creation is installed for the **root** user; the manual `authorized_keys` step in step 2 is for the non-root user you create below, or for adding more keys later.)
+
 1. Make a [Hetzner Cloud](https://www.hetzner.com/cloud) account → new project → **Add Server**.
-2. Recommended box: **CX43** — 4 vCPU, 16 GB RAM, 160 GB SSD, ~$14/month. Comfortably runs **~30–40+** concurrent Claude Code sessions. (The smaller **CX22**, 8 GB, ~$8/month, comfortably runs **~10–20**.) See the capacity note below — RAM is almost never the real limit.
+2. Recommended box: **CX42** — 8 vCPU, 16 GB RAM, 160 GB SSD, ~€16.40/month (≈ $18). Comfortably runs **30+** concurrent Claude Code sessions. (The cheaper entry box **CX32** — 4 vCPU, 8 GB RAM, 80 GB SSD, ~€6.80/month ≈ $7.50 — comfortably runs **~10–20**.) The Hetzner CX line is CX22 / CX32 / CX42 / CX52. See the capacity note below — RAM is almost never the real limit.
 3. **Image:** Ubuntu 24.04 LTS.
 4. **SSH key:** paste your phone's *and* your Mac's public key here now (see step 2) so you can log in without a password. You can also add keys later.
 5. Create. Note the **public IPv4** — that's your `<SERVER_IP>`.
 
-> **How many agents can it really run?** Far more than you'd think. On a 32 GB Mac the owner has run **35 Claude Code sessions simultaneously** — each ranging ~65 MB (idle) to ~740 MB (actively working), **median ~320 MB, average ~367 MB RSS** (and RSS overcounts shared framework memory, so the true incremental cost per extra session is lower). Rule of thumb: an **idle** session is ~50–150 MB; a **hard-working** one a few hundred MB. So **CX22 (8 GB) comfortably runs ~10–20 sessions; CX43 (16 GB) runs ~30–40+** (approximate).
+> **How many agents can it really run?** Far more than you'd think. On a 32 GB Mac the owner has run **35 Claude Code sessions simultaneously** — each ranging ~65 MB (idle) to ~740 MB (actively working), **median ~320 MB, average ~367 MB RSS** — *RSS (resident set size) is the memory a process actually holds in RAM* — and RSS overcounts shared framework memory, so the true incremental cost per extra session is lower. Rule of thumb: an **idle** session is ~50–150 MB; a **hard-working** one a few hundred MB. So **CX32 (8 GB) comfortably runs ~10–20 sessions; CX42 (16 GB) runs 30+** (approximate).
 >
 > **RAM is almost never the real limit.** The real ceilings are (1) your **Claude subscription quota / rate limits** — every session bills independently — and (2) CPU during heavy simultaneous bursts. Pick the cheapest box that fits your budget; you'll hit your Claude plan limits before you run out of memory.
 
@@ -69,10 +72,27 @@ ssh root@<SERVER_IP>
 adduser <USER>
 usermod -aG sudo <USER>
 
-# (optional but recommended) disable password login once keys work
-# in /etc/ssh/sshd_config set:  PasswordAuthentication no
+# Copy your SSH key from root to the new user
+rsync --archive --chown=<USER>:<USER> ~/.ssh /home/<USER>
+
+# Basic firewall
+ufw allow OpenSSH
+ufw enable
+
+# Automatic security updates (recommended for an always-on box)
+sudo apt install unattended-upgrades
+```
+
+**Disable root login and password auth — the Ubuntu 24.04 gotcha.** Editing only `/etc/ssh/sshd_config` does **not** work on Hetzner's image: it ships `/etc/ssh/sshd_config.d/50-cloud-init.conf` with `PasswordAuthentication yes`, and that drop-in overrides the main file. Add your own drop-in that wins (files load in order, so `99-` beats `50-`):
+```bash
+sudo tee /etc/ssh/sshd_config.d/99-hardening.conf <<'EOF'
+PasswordAuthentication no
+PermitRootLogin no
+EOF
 sudo systemctl restart ssh
 ```
+
+> ⚠️ **Before you close your root session, verify key-only login works in a SECOND terminal:** `ssh <USER>@<SERVER_IP>` then `sudo whoami` should print `root`. Only once that new session works should you log out of root — otherwise a typo can lock you out of the box entirely.
 
 ---
 
@@ -100,11 +120,18 @@ ssh-keygen -t ed25519        # if you don't already have one
 cat ~/.ssh/id_ed25519.pub    # copy this line too
 ```
 
+**On iPhone (Termius) — the key sub-flow.** Termius has no command line, so you generate the key in its GUI: open **Termius → Keychain → + (New Key) → Generate**, pick **Ed25519**, and save it. Tap the key → **Copy Public Key** (that's the half that goes on the server). Then **Hosts → + (New Host)**: set **Address** to your `<TAILNET_IP>` (or `<SERVER_IP>` at first), **Username** to `<USER>`, and under **Keys** attach the key you just made. Tap the host to connect — no password.
+
 **On the server**, add both public keys:
 ```bash
 mkdir -p ~/.ssh && chmod 700 ~/.ssh
 nano ~/.ssh/authorized_keys   # paste each pubkey on its own line
 chmod 600 ~/.ssh/authorized_keys
+```
+
+**One-command alternative — `ssh-copy-id`.** While password login is still enabled, from your Mac or Termux you can install a pubkey in a single command instead of editing `authorized_keys` by hand:
+```bash
+ssh-copy-id <USER>@<SERVER_IP>
 ```
 
 If your Mac and server should also SSH to each other, repeat the same: generate a key on the Mac, add its pubkey to the server (and vice-versa). This is exactly the "pubkey on Mac + on the Hetzner server" step.
@@ -189,27 +216,34 @@ Host mac
 Now from the phone: `ssh mac` → you're on the server. (Name it whatever you want — "mac", "server", "fleet".)
 
 Optional quality-of-life on Termux:
-- `pkg install openssh mosh` — **mosh** survives network changes / spotty signal far better than raw SSH for mobile use.
+- `pkg install openssh mosh` — **mosh** survives network changes / spotty signal far better than raw SSH for mobile use. Over Tailscale it just works; if you ever fall back to the public IP with `ufw` on, open UDP **60000–61000** (`sudo ufw allow 60000:61000/udp`).
 - Termux widgets let you put a one-tap `ssh mac` button on your home screen.
 
 ---
 
 ## 5. Install Claude Code on the server
 
+Primary method — the **native installer** (no Node, no sudo):
 ```bash
-# Node (Claude Code ships as an npm package)
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# Claude Code CLI
-npm install -g @anthropic-ai/claude-code
+curl -fsSL https://claude.ai/install.sh | bash
 
 # uv (fast Python package manager — handy for agent projects)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 claude          # first run walks you through login/auth
 ```
-Auth once and it persists on the server. From then on every SSH session can just run `claude`.
+
+Fallback — via **npm** (needs Node, and `-g` needs root):
+```bash
+# Node
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Claude Code CLI — plain `npm install -g` fails with EACCES, so use sudo
+sudo npm install -g @anthropic-ai/claude-code
+```
+
+**Headless login.** On a server with no browser, `claude` prints a **login URL** — open it on your phone or laptop browser, approve, and the token persists on the server. From then on every SSH session can just run `claude`. This requires an active **Claude Pro or Max** subscription on that account.
 
 ---
 
@@ -299,12 +333,15 @@ That's it. The agents keep running on the server whether or not my phone is conn
 
 ## 8. Running the server on a Mac
 
-If you're using a Mac (an old MacBook or a Mac Mini) as the always-on box instead of — or alongside — a cloud server, a few Mac-specific things keep it reliable. Everything else in this guide (SSH keys, Tailscale, the `ssh mac` shortcut, installing Claude Code) is the same; on macOS use `brew install` where the Ubuntu steps use `apt`.
+If you're using a Mac (an old MacBook or a Mac Mini) as the always-on box instead of — or alongside — a cloud server, a few Mac-specific things keep it reliable. Everything else in this guide (SSH keys, Tailscale, the `ssh mac` shortcut, installing Claude Code) is the same; on macOS use `brew install` where the Ubuntu steps use `apt` (install [Homebrew](https://brew.sh) first if you don't have it, then `brew install node` only if you take the npm route to Claude Code).
 
-### a) Keep it powered
+### a) Turn on Remote Login (do this first)
+macOS ships with its SSH server **off**, so `ssh mac` fails until you enable it: **System Settings → General → Sharing → Remote Login → On**, and restrict it to your user. Your Mac's `~/.ssh/authorized_keys` then takes your pasted public key exactly the way a Linux server does — same file, same `chmod 700 ~/.ssh` / `chmod 600 authorized_keys`.
+
+### b) Keep it powered
 A laptop acting as a server must stay **plugged into AC power at all times** — always on the charger. Never run it on battery as a server: the battery drains, the machine sleeps or dies, and your fleet goes with it.
 
-### b) Never let it sleep
+### c) Never let it sleep
 Set power management so the Mac never sleeps. This is the exact configuration to run:
 
 ```
@@ -324,7 +361,7 @@ For a one-off, scriptable "stay awake for this task," use `caffeinate` — e.g. 
 
 **MacBook with the lid closed (clamshell):** `sudo pmset -a disablesleep 1` lets a MacBook keep running with the lid shut even without an external display. It disables clamshell sleep entirely — the machine will never sleep from closing the lid — so use it deliberately. Leaving the lid open is the simpler, cooler-running option.
 
-### c) See the screen remotely — Screen Sharing (VNC) over Tailscale
+### d) See the screen remotely — Screen Sharing (VNC) over Tailscale
 SSH + Claude is your day-to-day. But sometimes you need the actual desktop: a browser login, a GUI app, a stuck dialog. Screen Sharing is that escape hatch.
 
 - On the Mac server: **System Settings → General → Sharing → enable Screen Sharing** (or **Remote Management**). It serves VNC on port **5900**.
@@ -333,22 +370,23 @@ SSH + Claude is your day-to-day. But sometimes you need the actual desktop: a br
 
 Frame it this way: SSH + Claude is how you work every day; Screen Sharing is how you take the wheel when an agent needs a browser, hits a GUI prompt, or something visual breaks.
 
-### d) Recovery after reboot / power outage
+### e) Recovery after reboot / power outage
 Power blips and reboots happen. Set the Mac to come back on its own, then relaunch agents by hand:
 
 - **Start up automatically after a power failure:**
   ```
   sudo systemsetup -setrestartpowerfailure on
   ```
-  (or System Settings → Energy.)
-- **Automatic login** for your user (System Settings → Users & Groups → Automatically log in as…) so the Mac returns to a logged-in desktop that SSH and Screen Sharing can reach without someone typing a password at the keyboard.
+  (or System Settings → Energy.) This is only supported on some Mac models — it errors on many MacBooks, which is fine; just skip it there.
+- **Automatic login** for your user (System Settings → Users & Groups → Automatically log in as…) so the Mac returns to a logged-in desktop that SSH and Screen Sharing can reach without someone typing a password at the keyboard. Note: **FileVault silently disables auto-login** — you can have one or the other, not both, so leave FileVault off on a headless server box.
 - After it's back up, **SSH in and relaunch your agents by hand**: `ssh mac` → `cd project` → `claude` (or restart your background jobs). Keep it simple — no launchd auto-relaunch needed.
 
 ---
 
 ## Recap checklist
 
-- [ ] Hetzner CX43, Ubuntu 24.04, non-root sudo user
+- [ ] Hetzner CX42 (or CX32), Ubuntu 24.04, non-root sudo user
+- [ ] SSH hardened: `99-hardening.conf` drop-in with `PasswordAuthentication no` + `PermitRootLogin no`, verified in a second terminal before logging out of root
 - [ ] ed25519 keypair on phone (Termux) **and** Mac; both pubkeys in server `~/.ssh/authorized_keys`
 - [ ] Tailscale installed + logged in on server, Mac, and phone — **same account on all devices**
 - [ ] Tailscale **key expiry disabled** for the always-on server (so it never silently drops off the tailnet)
@@ -359,6 +397,35 @@ Power blips and reboots happen. Set the Mac to come back on its own, then relaun
 - [ ] `ssh mac` → `claude agents` → attach to a session → work
 
 **If the server is a Mac, also:**
+- [ ] Remote Login (SSH) turned on, restricted to your user
 - [ ] Plugged into AC power; `pmset` no-sleep config set
 - [ ] Screen Sharing enabled; reachable at `vnc://<TAILNET_IP>`
-- [ ] Restart-after-power-failure on; automatic login on
+- [ ] Restart-after-power-failure on (if supported on your model); automatic login on (not with FileVault)
+
+---
+
+## Verify it works — end-to-end smoke test
+
+Run this once, in order, to prove the whole chain is live (distinct from the recap above — this is a live test, not a paperwork check):
+
+1. **Tailscale:** on the phone, `tailscale status` (or the app) shows all peers — server, Mac, phone — connected.
+2. **SSH with no password:** `ssh mac` connects straight to a shell with **no password prompt** (key auth working).
+3. **Claude installed:** on the server, `claude --version` prints a version.
+4. **Agent view opens:** `claude agents` opens the agent view screen.
+5. **Survives a reboot:** reboot the phone, reopen Tailscale, confirm it reconnects and `ssh mac` still works. (If it hangs, Tailscale came back OFF — the #1 cause.)
+
+If all five pass, you're done.
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `Connection timed out` / `ssh mac` hangs | Tailscale is off or expired on one device. Confirm it's **up** on both phone and server; try the public `<SERVER_IP>` as fallback. |
+| `Permission denied (publickey)` | Check the server's `~/.ssh` is `700`, `authorized_keys` is `600`, and you're logging in as the right user with your device's `id_ed25519.pub` present in it. |
+| `EACCES` during `npm install -g` | Use the native installer (`curl -fsSL https://claude.ai/install.sh \| bash`) or prefix with `sudo`. |
+| `claude: command not found` after install | Open a new shell (so PATH reloads), or add the install dir to your PATH; then re-run `claude`. |
+| Session drops on mobile | Use `mosh mac` instead of `ssh mac`; add `ServerAliveInterval 60` to `~/.ssh/config`. |
+| `uv: command not found` | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| Tailnet IP won't resolve by name | Enable **MagicDNS** in the Tailscale admin console. |

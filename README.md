@@ -48,6 +48,7 @@ This assumes you know Claude Code and nothing else. The terms, in one place:
 - **SSH (Secure Shell)** — the standard, encrypted way to open a command line *on another computer* over the internet. `ssh mac` = "open a command line on my server."
 - **SSH client app** — the app you run SSH from. **Android → Termux** (a free Linux terminal app; download from [Google Play](https://play.google.com/store/apps/details?id=com.termux) — also available on [F-Droid](https://f-droid.org/packages/com.termux/) and [GitHub releases](https://github.com/termux/termux-app/releases)). **iPhone → [Termius](https://apps.apple.com/app/termius-ssh-client/id549039908)** (a friendly GUI SSH client — iOS/Android/Mac/Windows; Android users can use either).
 - **SSH key (public / private)** — a passwordless login. You generate a **key pair**: the **private** key stays secret on your device, the **public** key is copied to the server. Never share the private key.
+- **Tailnet** — your own private network of Tailscale devices. Every machine you sign into Tailscale with the same account joins the same tailnet and can reach the others by their private `100.x.y.z` address.
 - **Tailscale (the app that connects your devices)** — a free app that links your own devices — phone, Mac, server — over a private, secure connection, as if they were all on the same home Wi-Fi, even when they're in different places. Install it on each device and sign in with the **same account**. Each device gets its own **private address** (it looks like `100.x.y.z`) that only your other devices can reach, so your phone connects to your server from anywhere — café Wi-Fi, mobile data — **without touching your router settings and without putting your server on the public internet**. Turn on **MagicDNS** to use an easy name like `mac` instead of the number.
 - **VNC / Screen Sharing** — seeing and controlling the server's actual desktop screen remotely, for when a command line isn't enough (a browser login, a GUI app).
 - **`claude agents`** — the Claude Code command that shows *all* your running sessions, across every project, in one screen. Your daily entry point.
@@ -60,7 +61,7 @@ The [setup guide](docs/setup-guide.md) also covers **Tailscale pitfalls** newcom
 - **True multi-agent** — run many concurrent sessions from one `claude agents` screen. In practice your **Claude subscription quota**, not your server's RAM, is what caps how many run at once (each session bills independently). Each project is its own folder with its own agents.
 - **Survives everything** — the session lives on the server as a background job, not on your phone. Network drops, app switches, and reboots don't kill your work.
 - **No custom infrastructure** — nothing to run but Claude Code itself. SSH and Tailscale are boring, battle-tested, and secure.
-- **Cheap** — a Hetzner CX43 (4 vCPU, 16 GB RAM) comfortably runs ~30–40 concurrent sessions for about $14/month.
+- **Cheap** — a Hetzner CX42 (8 vCPU, 16 GB RAM) comfortably runs 30+ concurrent sessions for about €16.40/month (≈ $18).
 
 This repo gives you **eli** — a Claude Code skill that walks you through the entire setup. Built by [Eli Grumman](https://www.linkedin.com/in/eli-grumman-495b0636/) — an expert with Claude Code from its early days, building and running autonomous agents locally and in the cloud; Agentic AI Team Lead at Axonius.
 
@@ -68,23 +69,17 @@ This repo gives you **eli** — a Claude Code skill that walks you through the e
 
 ## Install
 
-One command. Paste this into Claude Code:
+Run the installer (clones the repo and copies the skill into `~/.claude/skills/`):
 
-```
-/skill install github:eligrumman/eli-skill
+```bash
+curl -fsSL https://raw.githubusercontent.com/eligrumman/eli-skill/main/install.sh | sh
 ```
 
-Or manually:
+Or install it manually:
 
 ```bash
 git clone https://github.com/eligrumman/eli-skill.git
 cp -r eli-skill/skills/eli ~/.claude/skills/
-```
-
-Or run the installer:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/eligrumman/eli-skill/main/install.sh | sh
 ```
 
 Then tell your agent:
@@ -97,13 +92,13 @@ eli walk me
 
 ## What Happens Next
 
-First it asks where to run your agents — an old MacBook you already own, a Mac Mini, or a cloud server (Hetzner, ~$8–14/mo). Then `eli walk me` walks you through the whole thing, step by step:
+First it asks where to run your agents — an old MacBook you already own, a Mac Mini, or a cloud server (Hetzner, from ~€6.80/mo ≈ $7.50 up to ~€16.40/mo ≈ $18). Then `eli walk me` walks you through the whole thing, step by step:
 
-1. **Provision a server** — Hetzner Cloud, Ubuntu 24.04, a non-root sudo user.
+1. **Provision a server** — Hetzner Cloud, Ubuntu 24.04, a non-root sudo user, SSH hardening. (On a Mac instead: turn on Remote Login first.)
 2. **SSH keys** — generate a keypair on your phone *and* your Mac; both public keys go on the server. Private keys never leave your devices.
 3. **Tailscale** — install and log in on the server, Mac, and phone (same account). Now everything reaches the server by a stable private IP.
 4. **Termux `Host mac` shortcut** — so from the phone you just type `ssh mac`.
-5. **Install Claude Code** on the server — Node, the CLI, `uv`, and a one-time `claude` login that persists.
+5. **Install Claude Code** on the server — the native installer (or Node + npm), `uv`, and a one-time headless `claude` login that persists.
 6. **The agent model** — how to structure projects so each one carries its own agents.
 
 For the full written walkthrough, see [docs/setup-guide.md](docs/setup-guide.md) (English) or [docs/setup-guide-he.md](docs/setup-guide-he.md) (Hebrew).
@@ -181,11 +176,11 @@ You need a machine that's always on. First, the honest tradeoff:
 
 | | **Mac** (old MacBook / Mac Mini you own) | **Hetzner** (Linux cloud server) |
 |---|---|---|
-| Cost | **Free** — your own hardware, no monthly bill | ~$15/month |
+| Cost | **Free** — your own hardware, no monthly bill | from ~€6.80/mo (≈ $7.50) up to ~€16.40/mo (≈ $18) |
 | Uptime | Depends on your home network + power; you keep it alive | Built for uptime: higher speed, better stability, independent of your home network |
 | Best for | Mac-only apps that don't exist on Linux; a GUI/browser on the box | Always-on loops / agents that must never go down and shouldn't depend on your house's internet or power |
 
-**Both are valid, and many people run both:** Linux/Hetzner for the always-up fleet, a Mac for GUI/browser/Mac-app work. Want a set-and-forget always-on fleet? Go Hetzner. Already own a Mac and want a free box you can also see the screen of? Run it on the Mac (keep it plugged in and awake — see below).
+**Both are valid, and many people run both:** Linux/Hetzner for the always-up fleet, a Mac for GUI/browser/Mac-app work. Want a set-and-forget always-on fleet? Go Hetzner. Already own a Mac and want a free box you can also see the screen of? Run it on the Mac (turn on Remote Login and keep it plugged in and awake — see below).
 
 ### Option 1: Hetzner Cloud (Recommended)
 
@@ -193,21 +188,24 @@ Cheapest ongoing, EU-based, reliable. This is what the guide sets up.
 
 | Type | Specs | Price |
 |---|---|---|
-| **CX22** | 4 vCPU, 8 GB RAM | ~$8/month (~10–20 sessions) |
-| **CX43** | 4 vCPU, 16 GB RAM, 160 GB SSD | ~$14/month (~30–40+ sessions) |
+| **CX32** | 4 vCPU, 8 GB RAM, 80 GB SSD | ~€6.80/mo (≈ $7.50) — the cheaper entry box |
+| **CX42** | 8 vCPU, 16 GB RAM, 160 GB SSD | ~€16.40/mo (≈ $18) — recommended, runs 30+ concurrent sessions |
+
+(The Hetzner CX line is CX22 / CX32 / CX42 / CX52; the CX32 and CX42 are the sweet spots here.)
 
 An idle Claude Code session is ~50–150 MB; a hard-working one a few hundred MB (measured median ~320 MB across 35 real concurrent sessions on a 32 GB box). **RAM is almost never the real limit** — your **Claude subscription quota / rate limits** are (every session bills independently), with CPU a factor during heavy simultaneous bursts. Pick the cheapest box that fits your budget; you'll hit your plan limits before you run out of memory.
 
 ### Option 2: An old laptop / Mac Mini you already own
 
-Repurpose what's lying around. A used Mac Mini or an old laptop with a scratched screen — Claude Code doesn't care about screens. Minimum 8 GB RAM; 16 GB runs a small army. One-time cost, no monthly bill. Put it on Tailscale and reach it exactly the same way.
+Repurpose what's lying around. A used Mac Mini or an old laptop with a scratched screen — Claude Code doesn't care about screens. Minimum 8 GB RAM; 16 GB runs 30+ sessions. One-time cost, no monthly bill. Put it on Tailscale and reach it exactly the same way.
 
 **Running the server on a Mac** — a few Mac-specific essentials, covered in full in the [setup guide](docs/setup-guide.md#8-running-the-server-on-a-mac):
 
+- **Turn on Remote Login first** — System Settings → General → Sharing → **Remote Login → On** (restrict it to your user). This is what makes `ssh mac` work at all: macOS ships with the SSH server **off** by default. Your Mac's `~/.ssh/authorized_keys` takes your pasted public key exactly the way a Linux server does.
 - **Keep it powered** — a laptop-as-server must stay plugged into AC power at all times. Never run it on battery.
 - **Never let it sleep** — `sudo pmset -a sleep 0 displaysleep 0 disksleep 0 womp 1 ttyskeepawake 1 tcpkeepalive 1 powernap 1 standby 1`. (`caffeinate -dimsu <cmd>` holds it awake for a single task; a live SSH session already keeps it awake via `ttyskeepawake`.) For a lid-closed MacBook, `sudo pmset -a disablesleep 1` — or just leave the lid open, which is simpler and runs cooler.
 - **See the screen remotely** — enable **Screen Sharing** (System Settings → General → Sharing); it serves VNC on port 5900. Over Tailscale you reach it from anywhere: from another Mac, Finder → Go → Connect to Server (⌘K) → `vnc://<TAILNET_IP>`. SSH + Claude is your day-to-day; Screen Sharing is how you take the wheel when an agent needs a browser or hits a GUI prompt.
-- **Recovery after a power outage** — `sudo systemsetup -setrestartpowerfailure on` plus automatic login, so the Mac boots back to a reachable logged-in desktop; then SSH in and relaunch your agents by hand.
+- **Recovery after a power outage** — `sudo systemsetup -setrestartpowerfailure on` (if supported on your Mac model — it errors on many MacBooks) plus automatic login, so the Mac boots back to a reachable logged-in desktop; then SSH in and relaunch your agents by hand. Note: **FileVault silently disables auto-login** — pick one or the other.
 
 ---
 
@@ -223,6 +221,8 @@ No — and for an always-on setup it's often better without them. Each MCP serve
 <summary><strong>Is exposing SSH safe?</strong></summary>
 
 You don't expose it. With Tailscale, the server is reachable only by devices on your own tailnet — the public internet never sees the SSH port. Add key-only auth (disable password login) and you're in good shape. Keep the public IP as a fallback only.
+
+One Ubuntu 24.04 gotcha: editing only `/etc/ssh/sshd_config` does **not** disable password login, because Hetzner's cloud image ships `/etc/ssh/sshd_config.d/50-cloud-init.conf` with `PasswordAuthentication yes` that overrides it. Add a drop-in `/etc/ssh/sshd_config.d/99-hardening.conf` with `PasswordAuthentication no` and `PermitRootLogin no`, then `sudo systemctl restart ssh`. **Verify key-only login works in a SECOND terminal BEFORE closing your root session** so a typo can't lock you out. Full steps are in the [setup guide](docs/setup-guide.md).
 </details>
 
 <details>
@@ -234,7 +234,7 @@ Yes — that's the whole point. Run `claude agents` to see every session in one 
 <details>
 <summary><strong>What if my phone disconnects?</strong></summary>
 
-The agents keep running on the server as background sessions. SSH is just your window in. Reconnect later — a fresh `ssh mac` → `claude agents` shows every session exactly where you left it. For flaky mobile signal, `mosh` survives network changes far better than raw SSH.
+The agents keep running on the server as background sessions. SSH is just your window in. Reconnect later — a fresh `ssh mac` → `claude agents` shows every session exactly where you left it. For flaky mobile signal, `mosh` survives network changes far better than raw SSH. Over Tailscale `mosh` just works; if you ever fall back to the public IP with `ufw` on, open UDP **60000–61000** for it.
 </details>
 
 ---
