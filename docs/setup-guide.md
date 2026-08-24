@@ -80,8 +80,10 @@ ufw allow OpenSSH
 ufw enable
 
 # Automatic security updates (recommended for an always-on box)
-sudo apt install unattended-upgrades
+sudo apt install -y unattended-upgrades
 ```
+
+Note: that `rsync` line copies **root's** `authorized_keys` to the new `<USER>` **before** we disable root login below — that's exactly why the SSH key you already use keeps working after root login is turned off. Don't skip it.
 
 **Disable root login and password auth — the Ubuntu 24.04 gotcha.** Editing only `/etc/ssh/sshd_config` does **not** work on Hetzner's image: it ships `/etc/ssh/sshd_config.d/50-cloud-init.conf` with `PasswordAuthentication yes`, and that drop-in overrides the main file. Add your own drop-in that wins (files load in order, so `99-` beats `50-`):
 ```bash
@@ -129,7 +131,7 @@ nano ~/.ssh/authorized_keys   # paste each pubkey on its own line
 chmod 600 ~/.ssh/authorized_keys
 ```
 
-**One-command alternative — `ssh-copy-id`.** While password login is still enabled, from your Mac or Termux you can install a pubkey in a single command instead of editing `authorized_keys` by hand:
+**One-command alternative — `ssh-copy-id`.** This only works while password login is still enabled, so **do it before you disable password auth in step 1** (`ssh-copy-id` needs to log in with a password to install the key). From your Mac or Termux you can install a pubkey in a single command instead of editing `authorized_keys` by hand:
 ```bash
 ssh-copy-id <USER>@<SERVER_IP>
 ```
@@ -157,7 +159,7 @@ sudo tailscale up
 tailscale ip -4    # note this -> <TAILNET_IP> for the server
 ```
 
-**On the Mac:** install the Tailscale app (or `brew install tailscale`), log in with the same account.
+**On the Mac:** install the Tailscale app (or `brew install --cask tailscale` — the GUI menu-bar app, which is what you want on a Mac), log in with the same account.
 
 **On the phone:** install **Tailscale** from the Play Store, log in with the same account, toggle it **on**.
 
@@ -233,17 +235,19 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 claude          # first run walks you through login/auth
 ```
 
-Fallback — via **npm** (needs Node, and `-g` needs root):
+Fallback — via **npm** (needs Node):
 ```bash
 # Node
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
-# Claude Code CLI — plain `npm install -g` fails with EACCES, so use sudo
-sudo npm install -g @anthropic-ai/claude-code
+# Claude Code CLI
+npm install -g @anthropic-ai/claude-code
 ```
 
-**Headless login.** On a server with no browser, `claude` prints a **login URL** — open it on your phone or laptop browser, approve, and the token persists on the server. From then on every SSH session can just run `claude`. This requires an active **Claude Pro or Max** subscription on that account.
+If you use the npm route instead, **don't use `sudo`** — either use the native installer above, or configure an npm user prefix so global installs don't need root (see Anthropic's install docs).
+
+**Headless login.** On a server with no browser, `claude` prints a **login URL** — open it on your phone or laptop browser, approve, and the token persists on the server. From then on every SSH session can just run `claude`. This requires an active **Claude Pro, Max, Team, Enterprise, or Console** subscription on that account.
 
 ---
 
@@ -424,7 +428,7 @@ If all five pass, you're done.
 |---|---|
 | `Connection timed out` / `ssh mac` hangs | Tailscale is off or expired on one device. Confirm it's **up** on both phone and server; try the public `<SERVER_IP>` as fallback. |
 | `Permission denied (publickey)` | Check the server's `~/.ssh` is `700`, `authorized_keys` is `600`, and you're logging in as the right user with your device's `id_ed25519.pub` present in it. |
-| `EACCES` during `npm install -g` | Use the native installer (`curl -fsSL https://claude.ai/install.sh \| bash`) or prefix with `sudo`. |
+| `EACCES` during `npm install -g` | Use the native installer (`curl -fsSL https://claude.ai/install.sh \| bash`) — don't `sudo npm`; instead configure an npm user prefix so global installs don't need root (see Anthropic's install docs). |
 | `claude: command not found` after install | Open a new shell (so PATH reloads), or add the install dir to your PATH; then re-run `claude`. |
 | Session drops on mobile | Use `mosh mac` instead of `ssh mac`; add `ServerAliveInterval 60` to `~/.ssh/config`. |
 | `uv: command not found` | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |

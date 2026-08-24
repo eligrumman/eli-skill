@@ -80,8 +80,10 @@ ufw allow OpenSSH
 ufw enable
 
 # עדכוני אבטחה אוטומטיים (מומלץ לתיבת always-on)
-sudo apt install unattended-upgrades
+sudo apt install -y unattended-upgrades
 ```
+
+שימו לב: שורת ה-`rsync` הזו מעתיקה את ה-`authorized_keys` של **root** למשתמש `<USER>` החדש **לפני** שאנחנו מכבים את התחברות root למטה — בדיוק בגלל זה מפתח ה-SSH שאתם כבר משתמשים בו ממשיך לעבוד אחרי שהתחברות root נכבית. אל תדלגו על זה.
 
 **כיבוי התחברות root וסיסמה — המלכוד של Ubuntu 24.04.** עריכה של `/etc/ssh/sshd_config` בלבד **לא** עובדת על ה-image של Hetzner: הוא מגיע עם `/etc/ssh/sshd_config.d/50-cloud-init.conf` שמכיל `PasswordAuthentication yes`, וה-drop-in הזה גובר על הקובץ הראשי. הוסיפו drop-in משלכם שגובר (הקבצים נטענים לפי סדר, אז `99-` מנצח את `50-`):
 ```bash
@@ -129,7 +131,7 @@ nano ~/.ssh/authorized_keys   # הדביקו כל pubkey בשורה נפרדת
 chmod 600 ~/.ssh/authorized_keys
 ```
 
-**אלטרנטיבה בפקודה אחת — `ssh-copy-id`.** כל עוד התחברות עם סיסמה עדיין מופעלת, מה-Mac או מ-Termux אפשר להתקין pubkey בפקודה אחת במקום לערוך `authorized_keys` ידנית:
+**אלטרנטיבה בפקודה אחת — `ssh-copy-id`.** זה עובד רק כל עוד התחברות עם סיסמה עדיין מופעלת, אז **עשו את זה לפני שאתם מכבים את התחברות הסיסמה בשלב 1** (`ssh-copy-id` צריך להתחבר עם סיסמה כדי להתקין את המפתח). מה-Mac או מ-Termux אפשר להתקין pubkey בפקודה אחת במקום לערוך `authorized_keys` ידנית:
 ```bash
 ssh-copy-id <USER>@<SERVER_IP>
 ```
@@ -157,7 +159,7 @@ sudo tailscale up
 tailscale ip -4    # שמרו את זה -> <TAILNET_IP> של השרת
 ```
 
-**ב-Mac:** התקינו את אפליקציית Tailscale (או `brew install tailscale`), התחברו עם אותו חשבון.
+**ב-Mac:** התקינו את אפליקציית Tailscale (או `brew install --cask tailscale` — אפליקציית ה-GUI של שורת התפריטים, וזו זו שאתם רוצים על Mac), התחברו עם אותו חשבון.
 
 **בטלפון:** התקינו **Tailscale** מ-Play Store, התחברו עם אותו חשבון, הפעילו **on**.
 
@@ -233,17 +235,19 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 claude          # ההרצה הראשונה מדריכה אתכם בהתחברות/אימות
 ```
 
-חלופה — דרך **npm** (דורש Node, ו-`-g` דורש root):
+חלופה — דרך **npm** (דורש Node):
 ```bash
 # Node
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
-# Claude Code CLI — פקודת `npm install -g` רגילה נכשלת עם EACCES, אז השתמשו ב-sudo
-sudo npm install -g @anthropic-ai/claude-code
+# Claude Code CLI
+npm install -g @anthropic-ai/claude-code
 ```
 
-**התחברות headless.** בשרת בלי דפדפן, `claude` מדפיס **URL להתחברות** — פתחו אותו בדפדפן בטלפון או בלפטופ, אשרו, וה-token נשמר בשרת. מאותו רגע כל סשן SSH יכול פשוט להריץ `claude`. זה דורש מנוי **Claude Pro או Max** פעיל בחשבון הזה.
+אם אתם הולכים על מסלול ה-npm במקום, **אל תשתמשו ב-`sudo`** — או שתשתמשו ב-native installer למעלה, או שתגדירו npm user prefix כך שהתקנות גלובליות לא ידרשו root (ראו את מסמכי ההתקנה של Anthropic).
+
+**התחברות headless.** בשרת בלי דפדפן, `claude` מדפיס **URL להתחברות** — פתחו אותו בדפדפן בטלפון או בלפטופ, אשרו, וה-token נשמר בשרת. מאותו רגע כל סשן SSH יכול פשוט להריץ `claude`. זה דורש מנוי **Claude Pro, Max, Team, Enterprise, או Console** פעיל בחשבון הזה.
 
 ---
 
@@ -424,7 +428,7 @@ SSH + Claude הם היום-יום שלכם. אבל לפעמים צריך את ש
 |---|---|
 | `Connection timed out` / `ssh mac` נתקע | Tailscale כבוי או פג-תוקף באחד המכשירים. ודאו שהוא **up** גם בטלפון וגם בשרת; נסו את ה-`<SERVER_IP>` הציבורי כגיבוי. |
 | `Permission denied (publickey)` | בדקו ש-`~/.ssh` בשרת הוא `700`, `authorized_keys` הוא `600`, ושאתם מתחברים כמשתמש הנכון עם ה-`id_ed25519.pub` של המכשיר שלכם בתוכו. |
-| `EACCES` בזמן `npm install -g` | השתמשו ב-native installer (`curl -fsSL https://claude.ai/install.sh \| bash`) או הוסיפו `sudo`. |
+| `EACCES` בזמן `npm install -g` | השתמשו ב-native installer (`curl -fsSL https://claude.ai/install.sh \| bash`) — אל תשתמשו ב-`sudo npm`; במקום זאת הגדירו npm user prefix כך שהתקנות גלובליות לא ידרשו root (ראו את מסמכי ההתקנה של Anthropic). |
 | `claude: command not found` אחרי התקנה | פתחו shell חדש (כדי שה-PATH ייטען מחדש), או הוסיפו את תיקיית ההתקנה ל-PATH; ואז הריצו שוב `claude`. |
 | הסשן נופל בנייד | השתמשו ב-`mosh mac` במקום `ssh mac`; הוסיפו `ServerAliveInterval 60` ל-`~/.ssh/config`. |
 | `uv: command not found` | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
