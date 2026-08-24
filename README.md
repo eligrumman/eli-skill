@@ -160,11 +160,19 @@ Key discipline that keeps a fleet sane:
 
 ## Where to Run
 
-You need a machine that's always on. Options, cheapest ongoing first:
+You need a machine that's always on. First, the honest tradeoff:
+
+| | **Mac** (old MacBook / Mac Mini you own) | **Hetzner** (Linux cloud server) |
+|---|---|---|
+| Cost | **Free** — your own hardware, no monthly bill | ~$15/month |
+| Uptime | Depends on your home network + power; you keep it alive | Built for uptime: higher speed, better stability, independent of your home network |
+| Best for | Mac-only apps that don't exist on Linux; a GUI/browser on the box | Always-on loops / agents that must never go down and shouldn't depend on your house's internet or power |
+
+**Both are valid, and many people run both:** Linux/Hetzner for the always-up fleet, a Mac for GUI/browser/Mac-app work. Want a set-and-forget always-on fleet? Go Hetzner. Already own a Mac and want a free box you can also see the screen of? Run it on the Mac (keep it plugged in and awake — see below).
 
 ### Option 1: Hetzner Cloud (Recommended)
 
-Cheapest for what you get, EU-based, reliable. This is what the guide sets up.
+Cheapest ongoing, EU-based, reliable. This is what the guide sets up.
 
 | Type | Specs | Price |
 |---|---|---|
@@ -176,6 +184,13 @@ More RAM = more parallel agents. Claude Code uses ~300–500 MB per session.
 ### Option 2: An old laptop / Mac Mini you already own
 
 Repurpose what's lying around. A used Mac Mini or an old laptop with a scratched screen — Claude Code doesn't care about screens. Minimum 8 GB RAM; 16 GB runs a small army. One-time cost, no monthly bill. Put it on Tailscale and reach it exactly the same way.
+
+**Running the server on a Mac** — a few Mac-specific essentials, covered in full in the [setup guide](docs/setup-guide.md#8-running-the-server-on-a-mac):
+
+- **Keep it powered** — a laptop-as-server must stay plugged into AC power at all times. Never run it on battery.
+- **Never let it sleep** — `sudo pmset -a sleep 0 displaysleep 0 disksleep 0 womp 1 ttyskeepawake 1 tcpkeepalive 1 powernap 1 standby 1`. (`caffeinate -dimsu <cmd>` holds it awake for a single task; a live SSH session already keeps it awake via `ttyskeepawake`.) For a lid-closed MacBook, `sudo pmset -a disablesleep 1` — or just leave the lid open, which is simpler and runs cooler.
+- **See the screen remotely** — enable **Screen Sharing** (System Settings → General → Sharing); it serves VNC on port 5900. Over Tailscale you reach it from anywhere: from another Mac, Finder → Go → Connect to Server (⌘K) → `vnc://<TAILNET_IP>`. SSH + Claude is your day-to-day; Screen Sharing is how you take the wheel when an agent needs a browser or hits a GUI prompt.
+- **Recovery after a power outage** — `sudo systemsetup -setrestartpowerfailure on` plus automatic login, so the Mac boots back to a reachable logged-in desktop; then SSH in and relaunch your agents by hand.
 
 ---
 

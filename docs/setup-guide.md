@@ -23,6 +23,22 @@ They're glued together by **Tailscale** (a zero-config VPN), so every machine ca
 
 ---
 
+## Choosing your machine: Mac vs Hetzner
+
+Before you provision anything, decide where the agents will live. Two honest options:
+
+| | **Mac** (old MacBook / Mac Mini you own) | **Hetzner** (Linux cloud server) |
+|---|---|---|
+| Cost | **Free** — your own hardware, no monthly bill | ~$15/month |
+| Uptime | Depends on your home network + power; you're the one keeping it alive | Built for uptime: higher speed, better stability, independent of your home network |
+| Best for | Mac-only apps that don't exist on Linux; a GUI/browser on the box | Always-on loops / agents that must never go down and shouldn't depend on your house's internet or power |
+
+**Both are valid, and many people run both:** Linux/Hetzner for the always-up fleet, a Mac for GUI/browser/Mac-app work. Pick based on what you need.
+
+**Which should I pick?** Want a set-and-forget, always-on fleet that never depends on your home? Go **Hetzner**. Already own a Mac and want a free box you can also see the screen of (GUI, browser, Mac apps)? Run it on the **Mac** — just keep it plugged in and awake (see "Running the server on a Mac" below).
+
+---
+
 ## 1. Provision the server (Hetzner Cloud)
 
 1. Make a [Hetzner Cloud](https://www.hetzner.com/cloud) account → new project → **Add Server**.
@@ -208,6 +224,55 @@ That's it. The agents keep running on the server whether or not my phone is conn
 
 ---
 
+## 8. Running the server on a Mac
+
+If you're using a Mac (an old MacBook or a Mac Mini) as the always-on box instead of — or alongside — a cloud server, a few Mac-specific things keep it reliable. Everything else in this guide (SSH keys, Tailscale, the `ssh mac` shortcut, installing Claude Code) is the same; on macOS use `brew install` where the Ubuntu steps use `apt`.
+
+### a) Keep it powered
+A laptop acting as a server must stay **plugged into AC power at all times** — always on the charger. Never run it on battery as a server: the battery drains, the machine sleeps or dies, and your fleet goes with it.
+
+### b) Never let it sleep
+Set power management so the Mac never sleeps. This is the exact configuration to run:
+
+```
+sudo pmset -a sleep 0 displaysleep 0 disksleep 0 womp 1 ttyskeepawake 1 tcpkeepalive 1 powernap 1 standby 1
+```
+
+What the key flags do:
+- `sleep 0` — never system-sleep
+- `displaysleep 0` — the display never sleeps
+- `disksleep 0` — disks stay spun up
+- `womp 1` — wake for network access (Wake-on-LAN / magic packet)
+- `ttyskeepawake 1` — stays awake while a remote SSH/tty session is active
+- `tcpkeepalive 1` — keeps TCP connections alive during low-power
+- `powernap 1` / `standby 1` — background tasks keep running
+
+For a one-off, scriptable "stay awake for this task," use `caffeinate` — e.g. `caffeinate -dimsu claude ...` holds the Mac awake for as long as that command runs. Note that a live SSH session already asserts wake via `ttyskeepawake`, so day-to-day you rarely need it.
+
+**MacBook with the lid closed (clamshell):** `sudo pmset -a disablesleep 1` lets a MacBook keep running with the lid shut even without an external display. It disables clamshell sleep entirely — the machine will never sleep from closing the lid — so use it deliberately. Leaving the lid open is the simpler, cooler-running option.
+
+### c) See the screen remotely — Screen Sharing (VNC) over Tailscale
+SSH + Claude is your day-to-day. But sometimes you need the actual desktop: a browser login, a GUI app, a stuck dialog. Screen Sharing is that escape hatch.
+
+- On the Mac server: **System Settings → General → Sharing → enable Screen Sharing** (or **Remote Management**). It serves VNC on port **5900**.
+- Because the Mac is on your tailnet, you can reach that screen from **anywhere**, not just the LAN.
+- From another Mac: Finder → **Go → Connect to Server** (**⌘K / Cmd + K**) → enter `vnc://<TAILNET_IP>` → log in with the Mac's user. You now see and control the desktop.
+
+Frame it this way: SSH + Claude is how you work every day; Screen Sharing is how you take the wheel when an agent needs a browser, hits a GUI prompt, or something visual breaks.
+
+### d) Recovery after reboot / power outage
+Power blips and reboots happen. Set the Mac to come back on its own, then relaunch agents by hand:
+
+- **Start up automatically after a power failure:**
+  ```
+  sudo systemsetup -setrestartpowerfailure on
+  ```
+  (or System Settings → Energy.)
+- **Automatic login** for your user (System Settings → Users & Groups → Automatically log in as…) so the Mac returns to a logged-in desktop that SSH and Screen Sharing can reach without someone typing a password at the keyboard.
+- After it's back up, **SSH in and relaunch your agents by hand**: `ssh mac` → `cd project` → `claude` (or restart your background jobs). Keep it simple — no launchd auto-relaunch needed.
+
+---
+
 ## Recap checklist
 
 - [ ] Hetzner CX43, Ubuntu 24.04, non-root sudo user
@@ -217,3 +282,8 @@ That's it. The agents keep running on the server whether or not my phone is conn
 - [ ] Node + Claude Code CLI + uv installed on server; `claude` authed once
 - [ ] Per-project `CLAUDE.md`, `.claude/agents/*.md`, and/or `.claude/skills/<agent>/` defining each agent
 - [ ] `ssh mac` → `cd project` → `claude` → work
+
+**If the server is a Mac, also:**
+- [ ] Plugged into AC power; `pmset` no-sleep config set
+- [ ] Screen Sharing enabled; reachable at `vnc://<TAILNET_IP>`
+- [ ] Restart-after-power-failure on; automatic login on
