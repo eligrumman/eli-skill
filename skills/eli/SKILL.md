@@ -6,7 +6,7 @@ argument-hint: [setup|help|what do you think]
 
 # eli — Your Claude Code Expert
 
-By [Eli Groman](https://www.linkedin.com/in/eli-grumman-495b0636/) — Claude Code power user, $1,000+/month on Opus.
+By [Eli Grumman](https://www.linkedin.com/in/eli-grumman-495b0636/) — Claude Code power user, $1,000+/month on Opus.
 
 ## What I Can Help With
 
@@ -87,7 +87,7 @@ Before logging out of root, open a new terminal and confirm the new user works: 
 
 ## Step 2 — SSH keys (phone + Mac → server)
 
-**First, the app you type into on your phone.** SSH needs a *client app*. **Android → Termux** — a free Linux terminal app for Android; download from [F-Droid](https://f-droid.org/packages/com.termux/) (prefer this — the [Play Store](https://play.google.com/store/apps/details?id=com.termux) build is stale/unmaintained) or [GitHub releases](https://github.com/termux/termux-app/releases). **iPhone → [Termius](https://apps.apple.com/app/termius-ssh-client/id549039908)** — a friendly-GUI SSH client (iOS/Android/Mac/Windows); you save the server as a connection and tap to connect. So: **Android → Termux (or Termius); iPhone → Termius.** Commands below are shown for Termux; in Termius enter the same keys/host through its GUI.
+**First, the app you type into on your phone.** SSH needs a *client app*. **Android → Termux** — a free Linux terminal app for Android; download from [Google Play](https://play.google.com/store/apps/details?id=com.termux) — also available on [F-Droid](https://f-droid.org/packages/com.termux/) and [GitHub releases](https://github.com/termux/termux-app/releases). **iPhone → [Termius](https://apps.apple.com/app/termius-ssh-client/id549039908)** — a friendly-GUI SSH client (iOS/Android/Mac/Windows); you save the server as a connection and tap to connect. So: **Android → Termux (or Termius); iPhone → Termius.** Commands below are shown for Termux; in Termius enter the same keys/host through its GUI.
 
 The rule: **your private key (the secret half of your login) never leaves the device; you copy the *public* key to the server.**
 
@@ -117,7 +117,7 @@ If your Mac and server should also SSH to each other, repeat: generate a key on 
 
 Public IPs change and expose you; Tailscale gives every machine a stable private IP on your own tailnet.
 
-**What is Tailscale?** A **mesh VPN built on WireGuard**. Install it on each device; each logs into your account and joins your private network (your **tailnet**). Every device gets a **stable private IP (100.x.y.z)** reachable from **anywhere** — home, café Wi-Fi, LTE — with **no port-forwarding and no exposing SSH to the public internet**. Links are **end-to-end encrypted** and, where possible, **direct peer-to-peer** (NAT traversal), falling back to an encrypted relay (DERP) if a direct path isn't possible. Enable **MagicDNS** in the admin console to use device names instead of IPs.
+**What is Tailscale?** A free app that links your own devices — phone, Mac, server — over a private, secure connection, as if they were all on the same home Wi-Fi, even when they're in different places. Install it on each device and sign in with the **same account**. Each device gets its own **private address** (it looks like `100.x.y.z`) that only your other devices can reach, so your phone connects to your server from **anywhere** — café Wi-Fi, mobile data — **without touching your router settings and without putting your server on the public internet**. Turn on **MagicDNS** to use an easy name like `mac` instead of the number.
 
 **On the server:**
 ```bash
@@ -191,7 +191,7 @@ Auth once and it persists on the server. From then on every SSH session can just
 
 ## Your Control Center — `claude agents` (agent view)
 
-`claude agents` opens **agent view**: one screen listing every background session you've started, grouped by state (**Needs input** / **Working** / **Completed** / **Pinned**). Make this the primary entry point instead of plain `claude`. (Source: https://code.claude.com/docs/en/agent-view.)
+`claude agents` opens **agent view**: one screen listing every background session you've started, grouped by state (**Needs input** / **Working** / **Completed** / **Pinned**). Make this the primary entry point instead of plain `claude`. Read the official [`claude agents` / agent view docs](https://code.claude.com/docs/en/agent-view) for full detail.
 
 - **All projects at once** by default, regardless of launch directory. Narrow with `claude agents --cwd ~/projects/my-app`.
 - **Dispatch:** type a prompt + `Enter` → a new background session starts as a row. Each `Enter` = a separate session, so run several in parallel.

@@ -25,7 +25,7 @@ Run your agents on a small cloud server that's always on, and reach it from your
 
 > Phone (Termux) → `ssh mac` → `claude agents` → one screen with every session across all your projects → attach to the one you want and keep working.
 
-`claude agents` opens Claude Code's **agent view**: one screen listing every background session you've started, across all your projects, grouped by state (Needs input / Working / Completed / Pinned). Type a prompt + `Enter` to dispatch a new one, `Space` to peek, `Enter`/`→` to attach. Crucially, **each background session keeps running without a terminal attached** — close your SSH app or lose signal and the agents keep working; reopen `claude agents` later and they're all still there. (It's a research preview; shortcuts may change. Docs: https://code.claude.com/docs/en/agent-view.)
+`claude agents` opens Claude Code's **agent view**: one screen listing every background session you've started, across all your projects, grouped by state (Needs input / Working / Completed / Pinned). Type a prompt + `Enter` to dispatch a new one, `Space` to peek, `Enter`/`→` to attach. Crucially, **each background session keeps running without a terminal attached** — close your SSH app or lose signal and the agents keep working; reopen `claude agents` later and they're all still there. (It's a research preview; shortcuts may change. Read the official [`claude agents` / agent view docs](https://code.claude.com/docs/en/agent-view) for full detail.)
 
 Three machines, one private network:
 
@@ -46,9 +46,9 @@ This assumes you know Claude Code and nothing else. The terms, in one place:
 - **Server** — a computer that runs 24/7 so your agents never stop. Either a **Mac you own** (kept plugged in and awake) or one you **rent from Hetzner** (a company that rents computers in a datacenter for a few dollars a month).
 - **Terminal / command line** — a text window where you type commands instead of clicking.
 - **SSH (Secure Shell)** — the standard, encrypted way to open a command line *on another computer* over the internet. `ssh mac` = "open a command line on my server."
-- **SSH client app** — the app you run SSH from. **Android → Termux** (a free Linux terminal app; prefer the [F-Droid](https://f-droid.org/packages/com.termux/) build, since the [Play Store](https://play.google.com/store/apps/details?id=com.termux) one is stale). **iPhone → [Termius](https://apps.apple.com/app/termius-ssh-client/id549039908)** (a friendly GUI SSH client — iOS/Android/Mac/Windows; Android users can use either).
+- **SSH client app** — the app you run SSH from. **Android → Termux** (a free Linux terminal app; download from [Google Play](https://play.google.com/store/apps/details?id=com.termux) — also available on [F-Droid](https://f-droid.org/packages/com.termux/) and [GitHub releases](https://github.com/termux/termux-app/releases)). **iPhone → [Termius](https://apps.apple.com/app/termius-ssh-client/id549039908)** (a friendly GUI SSH client — iOS/Android/Mac/Windows; Android users can use either).
 - **SSH key (public / private)** — a passwordless login. You generate a **key pair**: the **private** key stays secret on your device, the **public** key is copied to the server. Never share the private key.
-- **Tailscale (a VPN)** — a **mesh VPN built on WireGuard**. Install it on each device, log each into your account, and they join your private network (your **tailnet**). Every device gets a **stable private IP (100.x.y.z)** reachable from anywhere — no port-forwarding, no exposing SSH to the public internet — over **end-to-end-encrypted, direct peer-to-peer** links (with an encrypted relay as fallback). Enable **MagicDNS** to use names instead of IPs.
+- **Tailscale (the app that connects your devices)** — a free app that links your own devices — phone, Mac, server — over a private, secure connection, as if they were all on the same home Wi-Fi, even when they're in different places. Install it on each device and sign in with the **same account**. Each device gets its own **private address** (it looks like `100.x.y.z`) that only your other devices can reach, so your phone connects to your server from anywhere — café Wi-Fi, mobile data — **without touching your router settings and without putting your server on the public internet**. Turn on **MagicDNS** to use an easy name like `mac` instead of the number.
 - **VNC / Screen Sharing** — seeing and controlling the server's actual desktop screen remotely, for when a command line isn't enough (a browser login, a GUI app).
 - **`claude agents`** — the Claude Code command that shows *all* your running sessions, across every project, in one screen. Your daily entry point.
 
@@ -62,7 +62,7 @@ The [setup guide](docs/setup-guide.md) also covers **Tailscale pitfalls** newcom
 - **No custom infrastructure** — nothing to run but Claude Code itself. SSH and Tailscale are boring, battle-tested, and secure.
 - **Cheap** — a Hetzner CX43 (4 vCPU, 16 GB RAM) comfortably runs ~30–40 concurrent sessions for about $14/month.
 
-This repo gives you **eli** — a Claude Code skill that walks you through the entire setup. Built by [Eli Groman](https://www.linkedin.com/in/eli-grumman-495b0636/), who spends $1,000+/month on Opus so you don't have to figure this out alone.
+This repo gives you **eli** — a Claude Code skill that walks you through the entire setup. Built by [Eli Grumman](https://www.linkedin.com/in/eli-grumman-495b0636/), who spends $1,000+/month on Opus so you don't have to figure this out alone.
 
 ---
 
@@ -258,7 +258,7 @@ eli-skill/
 
 ## Credits
 
-- Setup skill and documentation by [Eli Groman](https://www.linkedin.com/in/eli-grumman-495b0636/) — Claude Code power user, $1,000+/month on Opus.
+- Setup skill and documentation by [Eli Grumman](https://www.linkedin.com/in/eli-grumman-495b0636/) — Claude Code power user, $1,000+/month on Opus.
 
 ---
 

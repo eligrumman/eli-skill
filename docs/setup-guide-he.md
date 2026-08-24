@@ -82,7 +82,7 @@ sudo systemctl restart ssh
 
 **קודם — האפליקציה שדרכה תקלידו פקודות בטלפון.** SSH צריך *אפליקציית client* בטלפון. בחרו לפי פלטפורמה:
 
-- **Termux (אנדרואיד)** — **אפליקציית טרמינל חינמית לאנדרואיד**: היא נותנת לכם שורת פקודה של לינוקס ישירות על הטלפון, ושם מקלידים `ssh` כדי להגיע לשרת. אנדרואיד בלבד. הורדה: [Google Play](https://play.google.com/store/apps/details?id=com.termux) — **אבל הגרסה ב-Play Store מיושנת / כבר לא מתוחזקת**, אז **העדיפו את [F-Droid](https://f-droid.org/packages/com.termux/)** או את [GitHub releases](https://github.com/termux/termux-app/releases).
+- **Termux (אנדרואיד)** — **אפליקציית טרמינל חינמית לאנדרואיד**: היא נותנת לכם שורת פקודה של לינוקס ישירות על הטלפון, ושם מקלידים `ssh` כדי להגיע לשרת. אנדרואיד בלבד. הורדה מ-[Google Play](https://play.google.com/store/apps/details?id=com.termux) — זמין גם ב-[F-Droid](https://f-droid.org/packages/com.termux/) וב-[GitHub releases](https://github.com/termux/termux-app/releases).
 - **Termius (אייפון ואחרים)** — **client של SSH עם GUI ידידותי**: במקום להקליד פקודות, שומרים את השרת כחיבור ומקישים כדי להתחבר. חוצה-פלטפורמות — **iOS, Android, Mac, Windows**. זו הבחירה ל**משתמשי אייפון** (Termux הוא אנדרואיד בלבד). הורדה: [Apple App Store](https://apps.apple.com/app/termius-ssh-client/id549039908).
 
 **בקצרה: אנדרואיד → Termux (או Termius); אייפון → Termius.** הפקודות למטה מוצגות עבור Termux; ב-Termius מזינים את אותם מפתחות/host דרך ה-GUI.
@@ -119,11 +119,10 @@ chmod 600 ~/.ssh/authorized_keys
 
 ### מה זה Tailscale ואיך הוא עובד?
 
-Tailscale הוא **mesh VPN הבנוי על WireGuard**. מתקינים אותו על כל מכשיר; כל אחד מתחבר לחשבון שלכם ומצטרף לרשת הפרטית שלכם (ה-**tailnet** שלכם). מה זה נותן:
+Tailscale היא אפליקציה חינמית שמחברת בין המכשירים שלכם — הטלפון, ה-Mac, השרת — דרך חיבור פרטי ומאובטח, כאילו כולם על אותו ה-Wi-Fi הביתי, גם כשהם במקומות שונים. מתקינים אותה על כל מכשיר ומתחברים עם **אותו חשבון** בכולם. מה זה נותן:
 
-- כל מכשיר מקבל **IP פרטי יציב (100.x.y.z)** שעובד מ**כל מקום** — בית, Wi-Fi בבית קפה, LTE — עם **בלי port-forwarding ובלי לחשוף SSH לאינטרנט הציבורי**.
-- החיבורים **מוצפנים מקצה לקצה**, וככל האפשר **ישירים peer-to-peer** (NAT traversal חודר דרך ראוטרים/firewalls ביתיים). אם לא ניתן להקים נתיב ישיר, יש נפילה חזרה ל-relay מוצפן (DERP). המידע שלכם לא נשמר אצל Tailscale.
-- **MagicDNS** (הפעילו אותו בקונסולת הניהול) מאפשר להשתמש בשמות מכשירים במקום לזכור כתובות IP.
+- כל מכשיר מקבל **כתובת פרטית משלו** (זה נראה כמו `100.x.y.z`) שרק המכשירים האחרים שלכם יכולים להגיע אליה. כך הטלפון מתחבר לשרת מ**כל מקום** — Wi-Fi בבית קפה, נתונים סלולריים — **בלי לגעת בהגדרות הראוטר ובלי לחשוף את השרת לאינטרנט הציבורי**.
+- **MagicDNS** (הפעילו אותו ב-Tailscale) מאפשר להשתמש בשם קל כמו `mac` במקום המספר.
 
 **בשרת:**
 ```bash
@@ -218,7 +217,7 @@ claude          # ההרצה הראשונה מדריכה אתכם בהתחברו
 
 ## מרכז השליטה שלכם: `claude agents` (agent view)
 
-`claude agents` פותח את **agent view** — מסך אחד שמציג את כל סשן רקע שהתחלתם, מקובץ לפי מצב (**Needs input** / **Working** / **Completed** / **Pinned**). הפכו את זה לנקודת הכניסה הראשית שלכם במקום `claude` רגיל. (מקור: https://code.claude.com/docs/en/agent-view.)
+`claude agents` פותח את **agent view** — מסך אחד שמציג את כל סשן רקע שהתחלתם, מקובץ לפי מצב (**Needs input** / **Working** / **Completed** / **Pinned**). הפכו את זה לנקודת הכניסה הראשית שלכם במקום `claude` רגיל. לפרטים מלאים קראו את [התיעוד הרשמי של `claude agents` / agent view](https://code.claude.com/docs/en/agent-view).
 
 - **כל הפרויקטים בבת אחת.** כברירת מחדל agent view מציג סשנים בכל הפרויקטים שלכם, בלי קשר לתיקייה שממנה הפעלתם. צמצמו לפרויקט אחד עם `claude agents --cwd ~/projects/my-app`.
 - **שיגור משימה (Dispatch):** הקלידו prompt ולחצו `Enter` → סשן רקע חדש מתחיל כשורה. כל `Enter` מפעיל סשן *נפרד*, כך שאפשר להריץ כמה במקביל.

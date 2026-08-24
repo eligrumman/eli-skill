@@ -80,7 +80,7 @@ sudo systemctl restart ssh
 
 **First — the app you'll type commands into on your phone.** SSH needs a *client app* on the phone. Pick by platform:
 
-- **Termux (Android)** — a free **terminal app for Android**: it gives you a Linux command line right on your phone, which is where you type `ssh` to reach your server. Android only. Download: [Google Play](https://play.google.com/store/apps/details?id=com.termux) — **but the Play Store build is stale / no longer maintained**, so **prefer [F-Droid](https://f-droid.org/packages/com.termux/)** or the [GitHub releases](https://github.com/termux/termux-app/releases).
+- **Termux (Android)** — a free **terminal app for Android**: it gives you a Linux command line right on your phone, which is where you type `ssh` to reach your server. Android only. Download from [Google Play](https://play.google.com/store/apps/details?id=com.termux) — also available on [F-Droid](https://f-droid.org/packages/com.termux/) and [GitHub releases](https://github.com/termux/termux-app/releases).
 - **Termius (iPhone + others)** — a polished **SSH client with a friendly GUI**: instead of typing commands, you save your server as a connection and tap to connect. Cross-platform — **iOS, Android, Mac, Windows**. This is the pick for **iPhone users** (Termux is Android-only). Download: [Apple App Store](https://apps.apple.com/app/termius-ssh-client/id549039908).
 
 **In short: Android → Termux (or Termius); iPhone → Termius.** The commands below are shown for Termux; in Termius you enter the same keys/host through its GUI.
@@ -117,11 +117,10 @@ Public IPs change and expose you; Tailscale gives every machine a stable private
 
 ### What is Tailscale and how does it work?
 
-Tailscale is a **mesh VPN built on WireGuard**. You install it on each device; each one logs into your account and joins your private network (your **tailnet**). What that buys you:
+Tailscale is a free app that links your own devices — your phone, your Mac, your server — over a private, secure connection, as if they were all on the same home Wi-Fi, even when they're in different places. You install it on each device and sign in with the **same account** on all of them. What that buys you:
 
-- Every device gets a **stable private IP (100.x.y.z)** that works from **anywhere** — home, café Wi-Fi, LTE — with **no port-forwarding and without exposing SSH to the public internet**.
-- Connections are **end-to-end encrypted** and, wherever possible, **direct peer-to-peer** (NAT traversal punches through home routers/firewalls). If a direct path can't be established it falls back to an encrypted relay (DERP). Your data isn't stored by Tailscale.
-- **MagicDNS** (enable it in the admin console) lets you use device names instead of remembering IPs.
+- Each device gets its own **private address** (it looks like `100.x.y.z`) that only your other devices can reach. That's how your phone connects to your server from **anywhere** — café Wi-Fi, mobile data — **without touching your router settings and without putting your server on the public internet**.
+- **MagicDNS** (turn it on in Tailscale) lets you use an easy name like `mac` instead of the number.
 
 **On the server:**
 ```bash
@@ -216,7 +215,7 @@ Auth once and it persists on the server. From then on every SSH session can just
 
 ## Your control center: `claude agents` (agent view)
 
-`claude agents` opens **agent view** — one screen listing every background session you've started, grouped by state (**Needs input** / **Working** / **Completed** / **Pinned**). Make this your primary entry point instead of plain `claude`. (Source: https://code.claude.com/docs/en/agent-view.)
+`claude agents` opens **agent view** — one screen listing every background session you've started, grouped by state (**Needs input** / **Working** / **Completed** / **Pinned**). Make this your primary entry point instead of plain `claude`. Read the official [`claude agents` / agent view docs](https://code.claude.com/docs/en/agent-view) for full detail.
 
 - **All projects at once.** By default agent view lists sessions across **all** your projects, regardless of which directory you launched from. Narrow to one project with `claude agents --cwd ~/projects/my-app`.
 - **Dispatch a task:** type a prompt and press `Enter` → a new background session starts as a row. Each `Enter` launches a *separate* session, so you can fire off several in parallel.
