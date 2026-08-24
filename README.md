@@ -62,7 +62,7 @@ The [setup guide](docs/setup-guide.md) also covers **Tailscale pitfalls** newcom
 - **No custom infrastructure** — nothing to run but Claude Code itself. SSH and Tailscale are boring, battle-tested, and secure.
 - **Cheap** — a Hetzner CX43 (4 vCPU, 16 GB RAM) comfortably runs ~30–40 concurrent sessions for about $14/month.
 
-This repo gives you **eli** — a Claude Code skill that walks you through the entire setup. Built by [Eli Grumman](https://www.linkedin.com/in/eli-grumman-495b0636/), who spends $1,000+/month on Opus so you don't have to figure this out alone.
+This repo gives you **eli** — a Claude Code skill that walks you through the entire setup. Built by [Eli Grumman](https://www.linkedin.com/in/eli-grumman-495b0636/) — an expert with Claude Code for over a year, building and running autonomous agents locally and in the cloud; Agentic AI Team Lead at Axonius.
 
 ---
 
@@ -258,7 +258,7 @@ eli-skill/
 
 ## Credits
 
-- Setup skill and documentation by [Eli Grumman](https://www.linkedin.com/in/eli-grumman-495b0636/) — Claude Code power user, $1,000+/month on Opus.
+- Setup skill and documentation by [Eli Grumman](https://www.linkedin.com/in/eli-grumman-495b0636/) — an expert with Claude Code for over a year, building and running autonomous agents locally and in the cloud; Agentic AI Team Lead at Axonius.
 
 ---
 

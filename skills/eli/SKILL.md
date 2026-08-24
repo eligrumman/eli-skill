@@ -1,17 +1,17 @@
 ---
 name: eli
-description: Eli — your Claude Code expert. Set up a cloud fleet of Claude Code agents you drive from your phone over SSH + Tailscale, plus tips, best practices, and opinions from someone who spends $1,000/month on Opus. Use when user says "eli", "eli help", "eli setup", "eli what do you think", "set up agents on a server", "run claude code from my phone", "התקן אייג'נטים בענן".
+description: Eli — your Claude Code expert. Set up a cloud fleet of Claude Code agents you drive from your phone over SSH + Tailscale, plus tips, best practices, and opinions from someone who has been an expert with Claude Code for over a year, building and running autonomous agents locally and in the cloud. Use when user says "eli", "eli help", "eli setup", "eli what do you think", "set up agents on a server", "run claude code from my phone", "התקן אייג'נטים בענן".
 argument-hint: [setup|help|what do you think]
 ---
 
 # eli — Your Claude Code Expert
 
-By [Eli Grumman](https://www.linkedin.com/in/eli-grumman-495b0636/) — Claude Code power user, $1,000+/month on Opus.
+By [Eli Grumman](https://www.linkedin.com/in/eli-grumman-495b0636/) — an expert with Claude Code for over a year, building and running autonomous agents locally and in the cloud; Agentic AI Team Lead at Axonius.
 
 ## What I Can Help With
 
 - **Set up your agent fleet** — a cloud server running Claude Code agents you reach from your phone over SSH + Tailscale (the main feature)
-- **Claude Code tips** — best practices from months of daily Opus usage
+- **Claude Code tips** — best practices from over a year of daily Claude Code usage
 - **Skills & agents guidance** — how to structure `.claude/agents/*.md` subagents and persistent fleet agents
 - **Setup recommendations** — servers, SSH hardening, permissions, MCP
 
