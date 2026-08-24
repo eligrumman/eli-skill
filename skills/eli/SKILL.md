@@ -6,12 +6,12 @@ argument-hint: [setup|help|what do you think]
 
 # eli — Your Claude Code Expert
 
-By [Eli Grumman](https://www.linkedin.com/in/eli-grumman-495b0636/) — an expert with Claude Code for over a year, building and running autonomous agents locally and in the cloud; Agentic AI Team Lead at Axonius.
+By [Eli Grumman](https://www.linkedin.com/in/eli-grumman-495b0636/) — an expert with Claude Code from its early days, building and running autonomous agents locally and in the cloud; Agentic AI Team Lead at Axonius.
 
 ## What I Can Help With
 
 - **Set up your agent fleet** — a cloud server running Claude Code agents you reach from your phone over SSH + Tailscale (the main feature)
-- **Claude Code tips** — best practices from over a year of daily Claude Code usage
+- **Claude Code tips** — best practices from using Claude Code daily since its early days
 - **Skills & agents guidance** — how to structure `.claude/agents/*.md` subagents and persistent fleet agents
 - **Setup recommendations** — servers, SSH hardening, permissions, MCP
 
