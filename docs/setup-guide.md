@@ -1,25 +1,17 @@
----
-name: eli
-description: Eli — your Claude Code expert. Set up a cloud fleet of Claude Code agents you drive from your phone over SSH + Tailscale, plus tips, best practices, and opinions from someone who spends $1,000/month on Opus. Use when user says "eli", "eli help", "eli setup", "eli what do you think", "set up agents on a server", "run claude code from my phone", "התקן אייג'נטים בענן".
-argument-hint: [setup|help|what do you think]
----
+# Setup Guide — Run Claude Code Agents From Your Phone
 
-# eli — Your Claude Code Expert
+A complete, from-scratch guide to the setup **eli** installs for you: a cloud server running a fleet of Claude Code agents, reachable from anywhere over Tailscale, driven from an Android phone via Termux. No bot, no custom daemon — just SSH + Claude Code.
 
-By [Eli Groman](https://www.linkedin.com/in/eli-grumman-495b0636/) — Claude Code power user, $1,000+/month on Opus.
-
-## What I Can Help With
-
-- **Set up your agent fleet** — a cloud server running Claude Code agents you reach from your phone over SSH + Tailscale (the main feature)
-- **Claude Code tips** — best practices from months of daily Opus usage
-- **Skills & agents guidance** — how to structure `.claude/agents/*.md` subagents and persistent fleet agents
-- **Setup recommendations** — servers, SSH hardening, permissions, MCP
-
-## The Setup — in one line
-
+> **The whole flow in one line:**
 > Phone (Termux) → `ssh mac` → `cd` into a project → `claude` → pick the relevant agent → keep working.
 
-Three machines on one tailnet:
+All server IPs, usernames, and hostnames below are placeholders like `<SERVER_IP>`, `<USER>`, `<TAILNET_IP>`. Swap in your own.
+
+---
+
+## 0. What you're building
+
+Three machines, one tailnet:
 
 | Machine | Role |
 |---|---|
@@ -27,30 +19,17 @@ Three machines on one tailnet:
 | **Mac** (optional) | A second always-on box / dev machine, also on the tailnet. |
 | **Android phone** (Termux) | Your remote control. SSH in from anywhere. |
 
-Glued together by **Tailscale** (a zero-config private VPN), so every machine reaches every other by a stable private IP — no port-forwarding, no exposing SSH to the public internet.
+They're glued together by **Tailscale** (a zero-config VPN), so every machine can reach every other by a stable private IP — no port-forwarding, no exposing SSH to the public internet.
 
-All IPs, usernames, and hostnames below are placeholders: `<SERVER_IP>`, `<USER>`, `<TAILNET_IP>`. Swap in your own.
+---
 
-## First Interaction
-
-When triggered with "setup", confirm the plan and walk the user through the six steps below in order. Ask which machines they have (server? Mac? just a phone?) and adapt — the Mac is optional; the server and phone are the core. Wait for confirmation between steps that require the user to act (creating the server, pasting keys, logging into Tailscale).
-
-## Prerequisites
-
-- **Claude Code Max subscription** (required for Opus)
-- **A cloud provider account** (Hetzner recommended) — or any always-on machine you already own
-- **A Tailscale account** (free tier is plenty)
-- **An Android phone with Termux** installed
-
-## Step 1 — Provision the server (Hetzner Cloud)
+## 1. Provision the server (Hetzner Cloud)
 
 1. Make a [Hetzner Cloud](https://www.hetzner.com/cloud) account → new project → **Add Server**.
 2. Recommended box: **CX43** — 4 vCPU, 16 GB RAM, 160 GB SSD, ~$14/month. Comfortably runs 3+ concurrent Claude Code agents. (Smaller CX-series works for 1–2 agents; more RAM = more parallel agents.)
 3. **Image:** Ubuntu 24.04 LTS.
-4. **SSH key:** paste your phone's *and* your Mac's public key here now (see Step 2) so you can log in without a password. You can add keys later too.
+4. **SSH key:** paste your phone's *and* your Mac's public key here now (see step 2) so you can log in without a password. You can also add keys later.
 5. Create. Note the **public IPv4** — that's your `<SERVER_IP>`.
-
-Hetzner requires identity verification before you can create servers — upload a passport or national ID via their verification page. Takes a few hours. Do it first.
 
 First login and hardening:
 ```bash
@@ -60,22 +39,14 @@ ssh root@<SERVER_IP>
 adduser <USER>
 usermod -aG sudo <USER>
 
-# Copy your SSH key to the new user
-rsync --archive --chown=<USER>:<USER> ~/.ssh /home/<USER>
-
-# Disable root SSH login and (once keys work) password login
-# in /etc/ssh/sshd_config set:  PermitRootLogin no
-#                               PasswordAuthentication no
+# (optional but recommended) disable password login once keys work
+# in /etc/ssh/sshd_config set:  PasswordAuthentication no
 sudo systemctl restart ssh
-
-# Basic firewall
-ufw allow OpenSSH
-ufw enable
 ```
 
-Before logging out of root, open a new terminal and confirm the new user works: `ssh <USER>@<SERVER_IP>` then `sudo whoami` should print `root`.
+---
 
-## Step 2 — SSH keys (phone + Mac → server)
+## 2. SSH keys (phone + Mac → server)
 
 The rule: **your private key never leaves the device; you copy the *public* key to the server.**
 
@@ -99,9 +70,11 @@ nano ~/.ssh/authorized_keys   # paste each pubkey on its own line
 chmod 600 ~/.ssh/authorized_keys
 ```
 
-If your Mac and server should also SSH to each other, repeat: generate a key on the Mac, add its pubkey to the server (and vice-versa).
+If your Mac and server should also SSH to each other, repeat the same: generate a key on the Mac, add its pubkey to the server (and vice-versa). This is exactly the "pubkey on Mac + on the Hetzner server" step.
 
-## Step 3 — Tailscale (reach the server from anywhere)
+---
+
+## 3. Tailscale (reach the server from anywhere)
 
 Public IPs change and expose you; Tailscale gives every machine a stable private IP on your own tailnet.
 
@@ -119,9 +92,11 @@ tailscale ip -4    # note this -> <TAILNET_IP> for the server
 
 Now every device reaches the server at `<TAILNET_IP>` regardless of network. Notes from experience:
 - The tailnet IP only resolves when Tailscale is **up** on both ends. If it's flaky, keep the public `<SERVER_IP>` as a fallback.
-- Want the box reachable by name? Enable **MagicDNS** in the Tailscale admin console.
+- If you want the box reachable by name, enable **MagicDNS** in the Tailscale admin console.
 
-## Step 4 — Termux "mac" shortcut (phone-side ergonomics)
+---
+
+## 4. Termux "mac" shortcut (the phone-side ergonomics)
 
 The trick that makes this fast: a named SSH host so you type `ssh mac` instead of a full command.
 
@@ -141,7 +116,9 @@ Optional quality-of-life on Termux:
 - `pkg install openssh mosh` — **mosh** survives network changes / spotty signal far better than raw SSH for mobile use.
 - Termux widgets let you put a one-tap `ssh mac` button on your home screen.
 
-## Step 5 — Install Claude Code on the server
+---
+
+## 5. Install Claude Code on the server
 
 ```bash
 # Node (Claude Code ships as an npm package)
@@ -156,16 +133,16 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 claude          # first run walks you through login/auth
 ```
-
 Auth once and it persists on the server. From then on every SSH session can just run `claude`.
 
-## Step 6 — How the agents actually work
+---
 
-An "agent" here isn't a special server; it's a **project folder plus a role definition**. Two styles.
+## 6. How the agents actually work
+
+This is the part that matters. An "agent" here isn't a special server; it's a **project folder plus a role definition**. There are two styles I use.
 
 ### Style A — Subagent as a markdown file
-
-Inside a project you drop role files in `.claude/agents/*.md`. Each is markdown with YAML frontmatter; the body is that agent's full operating manual (persona, exact commands, rules). Example (`.claude/agents/qa.md`):
+Inside a project you drop role files in `.claude/agents/*.md`. Each is a markdown file with YAML frontmatter; the body is that agent's full operating manual (persona, exact commands, rules). Example (`.claude/agents/qa.md`):
 ```markdown
 ---
 name: qa
@@ -181,7 +158,6 @@ read the console, and report only observed facts — never "should work".
 Claude Code surfaces it in the agent picker, and the main session spawns it on demand. Great for on-demand roles (a QA checker, a reviewer).
 
 ### Style B — Persistent fleet agent (job + skill + prompt)
-
 For always-on workers, each agent is a long-running **Claude Code background job** whose:
 - **identity** comes from its own `state.json` (it reads this first every session to learn its name),
 - **behavior** comes from a same-named **skill** in `.claude/skills/<agent-name>/` (its operating manual, including its `/loop` interval, e.g. `/loop 15m`),
@@ -190,7 +166,7 @@ For always-on workers, each agent is a long-running **Claude Code background job
 On startup each agent: reads `state.json` → looks up its mission → loads *only its own* skill → confirms its `/loop` is running → then acts **only within its domain**, prefixing commits with `[agent-name]` and escalating anything out-of-domain rather than fixing it.
 
 ### The project layout that ties it together
-
+A real agent-driven project (my `investor` project) looks like:
 ```
 project/
 ├── CLAUDE.md                     # the "constitution": binding rules for every agent
@@ -202,7 +178,6 @@ project/
 ├── docs/ops/                     # runbooks, fleet-constitution.md, incident logs
 └── <domain code>/                # the actual thing the agents operate
 ```
-
 Key discipline that keeps a fleet sane:
 - **`CLAUDE.md` is binding**, not decorative — it's the operating contract for the human *and* every agent.
 - **Separation of duties:** a coordinator agent never patches domain logic; a domain failure = a not-good-enough prompt/skill/loop, fixed *there*.
@@ -210,7 +185,9 @@ Key discipline that keeps a fleet sane:
 - **Isolated worktrees:** agents edit in their own `git worktree` so they don't collide.
 - **Permissions as guardrails:** `settings.json` allowlists safe commands and denies every force-push variant.
 
-## A Day in the Life
+---
+
+## 7. A day in the life
 
 ```bash
 # from the phone, anywhere
@@ -227,10 +204,11 @@ claude
 #   - let the main session delegate to subagents, or
 #   - check on the always-on fleet jobs and steer them
 ```
+That's it. The agents keep running on the server whether or not my phone is connected; SSH is just the window I look through. Disconnect the phone, the work continues; reconnect later, pick up where it left off.
 
-That's it. The agents keep running on the server whether or not the phone is connected; SSH is just the window you look through. Disconnect the phone, the work continues; reconnect later, pick up where it left off.
+---
 
-## Recap Checklist
+## Recap checklist
 
 - [ ] Hetzner CX43, Ubuntu 24.04, non-root sudo user
 - [ ] ed25519 keypair on phone (Termux) **and** Mac; both pubkeys in server `~/.ssh/authorized_keys`
@@ -239,47 +217,3 @@ That's it. The agents keep running on the server whether or not the phone is con
 - [ ] Node + Claude Code CLI + uv installed on server; `claude` authed once
 - [ ] Per-project `CLAUDE.md`, `.claude/agents/*.md`, and/or `.claude/skills/<agent>/` defining each agent
 - [ ] `ssh mac` → `cd project` → `claude` → work
-
-## Where to Run — Always-On Machine
-
-You need a machine that's always on and connected. Options:
-
-### Option 1: Hetzner Cloud (Recommended)
-
-Cheapest for what you get, EU-based, reliable.
-
-| Type | Specs | Price |
-|---|---|---|
-| **CX22** | 4 vCPU, 8 GB RAM | ~$8/month (1–2 agents) |
-| **CX43** | 4 vCPU, 16 GB RAM, 160 GB SSD | ~$14/month (3+ agents) |
-
-Claude Code uses ~300–500 MB per session. More RAM = more parallel agents.
-
-### Option 2: An old laptop / Mac Mini you already own
-
-Repurpose what's lying around. A used Mac Mini or an old laptop with a scratched screen — Claude Code doesn't care about screens. Minimum 8 GB RAM; 16 GB runs 10+ sessions. One-time cost, no monthly bill. Put it on Tailscale and reach it exactly the same way (`ssh mac`).
-
-## FAQ
-
-### "Isn't exposing SSH dangerous?"
-
-You don't expose it. With Tailscale the server is reachable only by devices on your own tailnet — the public internet never sees the SSH port. Add key-only auth (disable password login), disable root login, enable `ufw`, and keep the public `<SERVER_IP>` as a fallback only.
-
-### "What about Claude Code Remote Control?"
-
-Remote Control lets you continue a *single* session from your phone via claude.ai or the Claude app. Built-in, secure, zero setup — great for a quick check-in. But: one session at a time, the terminal must stay open, a ~10-minute network drop ends it, and no parallel agents. This server setup is for running and steering *multiple* agents 24/7.
-
-### "Do I need MCP servers?"
-
-No — and for an always-on setup it's often better without them. Each MCP server adds ~200–300 MB and another process that can break. Claude Code without MCP is lean at ~300 MB/session. Install only what you truly need, or skip MCP entirely — Claude Code is extremely capable with just its built-in tools.
-
-## Troubleshooting
-
-| Problem | Fix |
-|---|---|
-| `ssh mac` hangs / can't connect | Is Tailscale **up** on both phone and server? Try the public `<SERVER_IP>` as fallback. |
-| Session drops on mobile | Use `mosh mac` instead of `ssh mac`; add `ServerAliveInterval 60` to `~/.ssh/config`. |
-| `claude: command not found` | Re-run the Node + `npm install -g @anthropic-ai/claude-code` steps on the server. |
-| `uv: command not found` | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
-| Permission denied (publickey) | Confirm your device's `id_ed25519.pub` is in the server's `~/.ssh/authorized_keys`. |
-| Tailnet IP won't resolve by name | Enable **MagicDNS** in the Tailscale admin console. |
