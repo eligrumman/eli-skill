@@ -3,9 +3,19 @@
 A complete, from-scratch guide to the setup **eli** installs for you: a cloud server running a fleet of Claude Code agents, reachable from anywhere over Tailscale, driven from an Android phone via Termux. No bot, no custom daemon — just SSH + Claude Code.
 
 > **The whole flow in one line:**
-> Phone (Termux) → `ssh mac` → `cd` into a project → `claude` → pick the relevant agent → keep working.
+> Phone (Termux) → `ssh mac` → `claude agents` → one screen with every session across all your projects → attach to the one you want and keep working.
 
 All server IPs, usernames, and hostnames below are placeholders like `<SERVER_IP>`, `<USER>`, `<TAILNET_IP>`. Swap in your own.
+
+> **New to all this? Start here — a plain-language glossary.** This guide assumes you know Claude Code and nothing else. Every term is defined again where it first appears, but here they are in one place:
+> - **Server** — a computer that runs 24/7 so your agents never stop. Either a **Mac you own** (kept plugged in and awake) or one you **rent from Hetzner** (a company that rents computers in a datacenter for a few dollars a month).
+> - **Terminal / command line** — a text window where you type commands instead of clicking buttons.
+> - **SSH (Secure Shell)** — the standard, encrypted way to open a command line *on another computer* over the internet. `ssh mac` means "open a command line on my server."
+> - **SSH client app** — the app on your phone you use to run SSH. **Android → Termux** (or Termius); **iPhone → Termius**. (Explained with download links in step 2.)
+> - **SSH key (public / private)** — a passwordless login. You generate a **key pair**: the **private** key stays secret on your device, the **public** key gets copied to the server. Anyone holding the matching private key can log in, so you never share it.
+> - **Tailscale / VPN** — a private network that lets your phone reach your server from anywhere, without exposing it to the public internet. (Explained in step 3.)
+> - **VNC / Screen Sharing** — seeing and controlling the server's actual desktop screen remotely, for when a command line isn't enough (a browser login, a GUI app).
+> - **`claude agents`** — the Claude Code command that shows *all* your running sessions, across every project, in one screen. Your daily entry point.
 
 ---
 
@@ -42,10 +52,14 @@ Before you provision anything, decide where the agents will live. Two honest opt
 ## 1. Provision the server (Hetzner Cloud)
 
 1. Make a [Hetzner Cloud](https://www.hetzner.com/cloud) account → new project → **Add Server**.
-2. Recommended box: **CX43** — 4 vCPU, 16 GB RAM, 160 GB SSD, ~$14/month. Comfortably runs 3+ concurrent Claude Code agents. (Smaller CX-series works for 1–2 agents; more RAM = more parallel agents.)
+2. Recommended box: **CX43** — 4 vCPU, 16 GB RAM, 160 GB SSD, ~$14/month. Comfortably runs **~30–40+** concurrent Claude Code sessions. (The smaller **CX22**, 8 GB, ~$8/month, comfortably runs **~10–20**.) See the capacity note below — RAM is almost never the real limit.
 3. **Image:** Ubuntu 24.04 LTS.
 4. **SSH key:** paste your phone's *and* your Mac's public key here now (see step 2) so you can log in without a password. You can also add keys later.
 5. Create. Note the **public IPv4** — that's your `<SERVER_IP>`.
+
+> **How many agents can it really run?** Far more than you'd think. On a 32 GB Mac the owner has run **35 Claude Code sessions simultaneously** — each ranging ~65 MB (idle) to ~740 MB (actively working), **median ~320 MB, average ~367 MB RSS** (and RSS overcounts shared framework memory, so the true incremental cost per extra session is lower). Rule of thumb: an **idle** session is ~50–150 MB; a **hard-working** one a few hundred MB. So **CX22 (8 GB) comfortably runs ~10–20 sessions; CX43 (16 GB) runs ~30–40+** (approximate).
+>
+> **RAM is almost never the real limit.** The real ceilings are (1) your **Claude subscription quota / rate limits** — every session bills independently — and (2) CPU during heavy simultaneous bursts. Pick the cheapest box that fits your budget; you'll hit your Claude plan limits before you run out of memory.
 
 First login and hardening:
 ```bash
@@ -64,7 +78,14 @@ sudo systemctl restart ssh
 
 ## 2. SSH keys (phone + Mac → server)
 
-The rule: **your private key never leaves the device; you copy the *public* key to the server.**
+**First — the app you'll type commands into on your phone.** SSH needs a *client app* on the phone. Pick by platform:
+
+- **Termux (Android)** — a free **terminal app for Android**: it gives you a Linux command line right on your phone, which is where you type `ssh` to reach your server. Android only. Download: [Google Play](https://play.google.com/store/apps/details?id=com.termux) — **but the Play Store build is stale / no longer maintained**, so **prefer [F-Droid](https://f-droid.org/packages/com.termux/)** or the [GitHub releases](https://github.com/termux/termux-app/releases).
+- **Termius (iPhone + others)** — a polished **SSH client with a friendly GUI**: instead of typing commands, you save your server as a connection and tap to connect. Cross-platform — **iOS, Android, Mac, Windows**. This is the pick for **iPhone users** (Termux is Android-only). Download: [Apple App Store](https://apps.apple.com/app/termius-ssh-client/id549039908).
+
+**In short: Android → Termux (or Termius); iPhone → Termius.** The commands below are shown for Termux; in Termius you enter the same keys/host through its GUI.
+
+The rule: **your private key (the secret half of your login) never leaves the device; you copy the *public* key to the server.**
 
 **On the phone (Termux):**
 ```bash
@@ -94,6 +115,14 @@ If your Mac and server should also SSH to each other, repeat the same: generate 
 
 Public IPs change and expose you; Tailscale gives every machine a stable private IP on your own tailnet.
 
+### What is Tailscale and how does it work?
+
+Tailscale is a **mesh VPN built on WireGuard**. You install it on each device; each one logs into your account and joins your private network (your **tailnet**). What that buys you:
+
+- Every device gets a **stable private IP (100.x.y.z)** that works from **anywhere** — home, café Wi-Fi, LTE — with **no port-forwarding and without exposing SSH to the public internet**.
+- Connections are **end-to-end encrypted** and, wherever possible, **direct peer-to-peer** (NAT traversal punches through home routers/firewalls). If a direct path can't be established it falls back to an encrypted relay (DERP). Your data isn't stored by Tailscale.
+- **MagicDNS** (enable it in the admin console) lets you use device names instead of remembering IPs.
+
 **On the server:**
 ```bash
 curl -fsSL https://tailscale.com/install.sh | sh
@@ -109,6 +138,38 @@ tailscale ip -4    # note this -> <TAILNET_IP> for the server
 Now every device reaches the server at `<TAILNET_IP>` regardless of network. Notes from experience:
 - The tailnet IP only resolves when Tailscale is **up** on both ends. If it's flaky, keep the public `<SERVER_IP>` as a fallback.
 - If you want the box reachable by name, enable **MagicDNS** in the Tailscale admin console.
+
+### Tailscale pitfalls & common newbie mistakes
+
+**General**
+- **Same account on every device.** The #1 mistake: the server is logged into one Tailscale account and the phone into another, so they can't see each other. All devices must be on the same tailnet (or explicitly shared in).
+- **Tailscale must be toggled ON at both ends** at connect time. If `ssh mac` hangs, check Tailscale is actually up on the phone **and** the server.
+- **Key expiry.** By default a device's key expires (~180 days) and it silently drops off the tailnet until you re-authenticate. For an always-on server, **disable key expiry** for that machine in the admin console so it never drops.
+- Use the `100.x` IP directly, or enable **MagicDNS** for names. Keep the server's **public IP as a fallback** for when the tailnet is flaky.
+
+**Linux server**
+- After install, `sudo tailscale up`; ensure the service auto-starts on reboot (`sudo systemctl enable --now tailscaled`).
+- **Headless auth:** no browser on the server → it prints a login URL; open it on your phone/laptop to authorize. Or provision non-interactively with an auth key: `sudo tailscale up --authkey tskey-...`.
+- Don't firewall the `tailscale0` interface if you run ufw/iptables.
+- (Optional) `tailscale up --ssh` enables Tailscale-managed SSH; not required if you already use key-based SSH.
+
+**Mac**
+- Two flavors: the **Mac App Store** app vs the **standalone/open-source** app (or `brew install --cask tailscale`). For a Mac used as a *server*, prefer the standalone build so you get the `tailscale` CLI.
+- On first launch macOS shows a **VPN / network-extension permission prompt** — you must approve it, which needs the screen (do it via physical access or Screen Sharing once).
+- Make sure Tailscale **launches at login** (especially on a headless auto-login Mac), and the menu-bar app is logged in.
+- Don't accidentally leave **"Use exit node"** on — it routes all your traffic through another device and is slow/confusing.
+
+**Mobile (Android)**
+- Tailscale is a **separate app** from Termux — install it, log in, toggle ON. Termux does not run Tailscale itself.
+- **Android battery optimization can kill the VPN.** Exclude Tailscale from battery optimization so it stays connected in the background.
+- **After a phone reboot, Tailscale may come back OFF.** When your phone restarts (or an OS update reboots it), the VPN toggle often reverts to off — so `ssh mac` just hangs until you reopen the Tailscale app and toggle it back ON. Enable Tailscale's **"Connect on start / run on boot"** option in the Android app settings (and exclude it from battery optimization). Rule of thumb: if you can't reach the server right after restarting your phone, check Tailscale is ON first — it's the most common cause.
+- Be careful with Android **"Always-on VPN" / "Block connections without VPN"** — usually leave these off; just toggle Tailscale when you need it.
+- If a MagicDNS name won't resolve or `ssh mac` times out on mobile: toggle Tailscale off/on, or you may be behind a captive-portal Wi-Fi → fall back to the public IP.
+
+**Debugging commands (any platform)**
+- `tailscale status` — shows peers and whether a connection is **direct or relayed**.
+- `tailscale ping <host>` — tests connectivity to a peer.
+- `tailscale netcheck` — diagnoses NAT/relay conditions.
 
 ---
 
@@ -150,6 +211,21 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 claude          # first run walks you through login/auth
 ```
 Auth once and it persists on the server. From then on every SSH session can just run `claude`.
+
+---
+
+## Your control center: `claude agents` (agent view)
+
+`claude agents` opens **agent view** — one screen listing every background session you've started, grouped by state (**Needs input** / **Working** / **Completed** / **Pinned**). Make this your primary entry point instead of plain `claude`. (Source: https://code.claude.com/docs/en/agent-view.)
+
+- **All projects at once.** By default agent view lists sessions across **all** your projects, regardless of which directory you launched from. Narrow to one project with `claude agents --cwd ~/projects/my-app`.
+- **Dispatch a task:** type a prompt and press `Enter` → a new background session starts as a row. Each `Enter` launches a *separate* session, so you can fire off several in parallel.
+- **Peek:** select a row and press `Space` to see its latest output or the question it's waiting on; reply inline with `Enter`.
+- **Attach:** `Enter` or `→` on a row enters the full conversation. **Detach:** `←` on an empty prompt (or `Esc`) returns to the table.
+- **Bring an existing session in:** run `/bg` inside a normal `claude` session (or press `←`) to background it into agent view.
+- **They survive disconnects.** Each background session keeps running **without a terminal attached** — so you can close Termux/Termius or lose your phone signal and the agents keep working. Reopen `claude agents` later and they're all still there. This is the real answer to "won't it die when I disconnect?" — no, background sessions persist on the server.
+- **Quota, not RAM, is the limit.** Each session uses your Claude subscription quota **independently**, so that — not memory — is the practical ceiling on how many to run at once (see the capacity note under step 1).
+- It's a **research preview**; keyboard shortcuts may change.
 
 ---
 
@@ -209,18 +285,16 @@ Key discipline that keeps a fleet sane:
 # from the phone, anywhere
 ssh mac
 
-# jump into the project I want to work on
-cd ~/investor
+# open agent view — every session across all my projects, in one screen
+claude agents
 
-# start Claude Code — it loads CLAUDE.md + available agents automatically
-claude
-
-# then, in the session:
-#   - pick the relevant agent from the picker, or
-#   - let the main session delegate to subagents, or
-#   - check on the always-on fleet jobs and steer them
+# then, right there:
+#   - type a prompt + Enter to dispatch a new background session
+#   - Space to peek at what a session is doing or asking
+#   - Enter / → to attach to one and steer it; ← or Esc to detach
+#   - jump straight to a single project with:  claude agents --cwd ~/investor
 ```
-That's it. The agents keep running on the server whether or not my phone is connected; SSH is just the window I look through. Disconnect the phone, the work continues; reconnect later, pick up where it left off.
+That's it. The agents keep running on the server whether or not my phone is connected; agent view is just the window I look through. Disconnect the phone, the work continues; reopen `claude agents` later, everything's still there.
 
 ---
 
@@ -277,11 +351,13 @@ Power blips and reboots happen. Set the Mac to come back on its own, then relaun
 
 - [ ] Hetzner CX43, Ubuntu 24.04, non-root sudo user
 - [ ] ed25519 keypair on phone (Termux) **and** Mac; both pubkeys in server `~/.ssh/authorized_keys`
-- [ ] Tailscale installed + logged in on server, Mac, and phone (same account)
-- [ ] `~/.ssh/config` `Host mac` shortcut in Termux (tailnet IP, keepalive)
+- [ ] Tailscale installed + logged in on server, Mac, and phone — **same account on all devices**
+- [ ] Tailscale **key expiry disabled** for the always-on server (so it never silently drops off the tailnet)
+- [ ] On the phone: Tailscale excluded from **battery optimization** + **"Connect on start / run on boot"** enabled
+- [ ] `~/.ssh/config` `Host mac` shortcut in Termux/Termius (tailnet IP, keepalive)
 - [ ] Node + Claude Code CLI + uv installed on server; `claude` authed once
 - [ ] Per-project `CLAUDE.md`, `.claude/agents/*.md`, and/or `.claude/skills/<agent>/` defining each agent
-- [ ] `ssh mac` → `cd project` → `claude` → work
+- [ ] `ssh mac` → `claude agents` → attach to a session → work
 
 **If the server is a Mac, also:**
 - [ ] Plugged into AC power; `pmset` no-sleep config set

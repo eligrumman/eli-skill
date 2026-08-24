@@ -23,7 +23,9 @@ Run your agents on a small cloud server that's always on, and reach it from your
 
 **The whole flow in one line:**
 
-> Phone (Termux) → `ssh mac` → `cd` into a project → `claude` → pick the relevant agent → keep working.
+> Phone (Termux) → `ssh mac` → `claude agents` → one screen with every session across all your projects → attach to the one you want and keep working.
+
+`claude agents` opens Claude Code's **agent view**: one screen listing every background session you've started, across all your projects, grouped by state (Needs input / Working / Completed / Pinned). Type a prompt + `Enter` to dispatch a new one, `Space` to peek, `Enter`/`→` to attach. Crucially, **each background session keeps running without a terminal attached** — close your SSH app or lose signal and the agents keep working; reopen `claude agents` later and they're all still there. (It's a research preview; shortcuts may change. Docs: https://code.claude.com/docs/en/agent-view.)
 
 Three machines, one private network:
 
@@ -37,13 +39,28 @@ They're glued together by **Tailscale** — a zero-config private VPN — so eve
 
 The agents keep running on the server whether or not your phone is connected. SSH is just the window you look through: disconnect, the work continues; reconnect later, pick up where it left off.
 
+## New Here? Plain-Language Glossary
+
+This assumes you know Claude Code and nothing else. The terms, in one place:
+
+- **Server** — a computer that runs 24/7 so your agents never stop. Either a **Mac you own** (kept plugged in and awake) or one you **rent from Hetzner** (a company that rents computers in a datacenter for a few dollars a month).
+- **Terminal / command line** — a text window where you type commands instead of clicking.
+- **SSH (Secure Shell)** — the standard, encrypted way to open a command line *on another computer* over the internet. `ssh mac` = "open a command line on my server."
+- **SSH client app** — the app you run SSH from. **Android → Termux** (a free Linux terminal app; prefer the [F-Droid](https://f-droid.org/packages/com.termux/) build, since the [Play Store](https://play.google.com/store/apps/details?id=com.termux) one is stale). **iPhone → [Termius](https://apps.apple.com/app/termius-ssh-client/id549039908)** (a friendly GUI SSH client — iOS/Android/Mac/Windows; Android users can use either).
+- **SSH key (public / private)** — a passwordless login. You generate a **key pair**: the **private** key stays secret on your device, the **public** key is copied to the server. Never share the private key.
+- **Tailscale (a VPN)** — a **mesh VPN built on WireGuard**. Install it on each device, log each into your account, and they join your private network (your **tailnet**). Every device gets a **stable private IP (100.x.y.z)** reachable from anywhere — no port-forwarding, no exposing SSH to the public internet — over **end-to-end-encrypted, direct peer-to-peer** links (with an encrypted relay as fallback). Enable **MagicDNS** to use names instead of IPs.
+- **VNC / Screen Sharing** — seeing and controlling the server's actual desktop screen remotely, for when a command line isn't enough (a browser login, a GUI app).
+- **`claude agents`** — the Claude Code command that shows *all* your running sessions, across every project, in one screen. Your daily entry point.
+
+The [setup guide](docs/setup-guide.md) also covers **Tailscale pitfalls** newcomers hit — same account on every device, disabling key expiry on the always-on server, and excluding the Tailscale app from battery optimization (plus "connect on boot") on the phone so it doesn't silently drop.
+
 ## Why This Beats the Alternatives
 
 - **It's real Claude Code** — your `CLAUDE.md`, MCP servers, skills, permissions, and project context, exactly as on your desktop. Nothing reimplemented, nothing lost.
-- **True multi-agent** — run as many concurrent agents as your server's RAM allows. Each project is its own folder with its own agents.
-- **Survives everything** — the session lives on the server, not on your phone. Network drops, app switches, and reboots don't kill your work.
+- **True multi-agent** — run many concurrent sessions from one `claude agents` screen. In practice your **Claude subscription quota**, not your server's RAM, is what caps how many run at once (each session bills independently). Each project is its own folder with its own agents.
+- **Survives everything** — the session lives on the server as a background job, not on your phone. Network drops, app switches, and reboots don't kill your work.
 - **No custom infrastructure** — nothing to run but Claude Code itself. SSH and Tailscale are boring, battle-tested, and secure.
-- **Cheap** — a Hetzner CX43 (4 vCPU, 16 GB RAM) comfortably runs 3+ agents for about $14/month.
+- **Cheap** — a Hetzner CX43 (4 vCPU, 16 GB RAM) comfortably runs ~30–40 concurrent sessions for about $14/month.
 
 This repo gives you **eli** — a Claude Code skill that walks you through the entire setup. Built by [Eli Groman](https://www.linkedin.com/in/eli-grumman-495b0636/), who spends $1,000+/month on Opus so you don't have to figure this out alone.
 
@@ -154,7 +171,7 @@ Key discipline that keeps a fleet sane:
 | **Claude Code Max subscription** | Opus access — no Opus, no team |
 | **A cloud server** (or any always-on box) | Runs the agents 24/7 |
 | **Tailscale account** | Reach the server privately from anywhere |
-| **Android phone with Termux** | Your remote control |
+| **A phone with an SSH app** (Android → Termux; iPhone → Termius) | Your remote control |
 
 ---
 
@@ -176,10 +193,10 @@ Cheapest ongoing, EU-based, reliable. This is what the guide sets up.
 
 | Type | Specs | Price |
 |---|---|---|
-| **CX22** | 4 vCPU, 8 GB RAM | ~$8/month (1–2 agents) |
-| **CX43** | 4 vCPU, 16 GB RAM, 160 GB SSD | ~$14/month (3+ agents) |
+| **CX22** | 4 vCPU, 8 GB RAM | ~$8/month (~10–20 sessions) |
+| **CX43** | 4 vCPU, 16 GB RAM, 160 GB SSD | ~$14/month (~30–40+ sessions) |
 
-More RAM = more parallel agents. Claude Code uses ~300–500 MB per session.
+An idle Claude Code session is ~50–150 MB; a hard-working one a few hundred MB (measured median ~320 MB across 35 real concurrent sessions on a 32 GB box). **RAM is almost never the real limit** — your **Claude subscription quota / rate limits** are (every session bills independently), with CPU a factor during heavy simultaneous bursts. Pick the cheapest box that fits your budget; you'll hit your plan limits before you run out of memory.
 
 ### Option 2: An old laptop / Mac Mini you already own
 
@@ -211,13 +228,13 @@ You don't expose it. With Tailscale, the server is reachable only by devices on 
 <details>
 <summary><strong>Can I run multiple agents in parallel?</strong></summary>
 
-Yes. Each project folder is its own set of agents, and you can run as many concurrent Claude Code sessions as your server's RAM allows. Jump between them by `cd`-ing into different projects.
+Yes — that's the whole point. Run `claude agents` to see every session in one screen and dispatch new ones with a prompt + `Enter`. You can run far more than you'd expect: memory is rarely the ceiling (an idle session is ~50–150 MB), so in practice your **Claude subscription quota** is what limits how many run at once, since each session bills independently.
 </details>
 
 <details>
 <summary><strong>What if my phone disconnects?</strong></summary>
 
-The agents keep running on the server. SSH is just your window in. Reconnect later — with `mosh` or a fresh `ssh mac` — and pick up where you left off. For flaky mobile signal, `mosh` survives network changes far better than raw SSH.
+The agents keep running on the server as background sessions. SSH is just your window in. Reconnect later — a fresh `ssh mac` → `claude agents` shows every session exactly where you left it. For flaky mobile signal, `mosh` survives network changes far better than raw SSH.
 </details>
 
 ---
