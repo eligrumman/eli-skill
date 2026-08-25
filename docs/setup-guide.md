@@ -1,6 +1,6 @@
 # Setup Guide — Run Claude Code Agents From Your Phone
 
-A complete, from-scratch guide to the setup **eli** installs for you: a cloud server running a fleet of Claude Code agents, reachable from anywhere over Tailscale, driven from an Android phone via Termux. No bot, no custom daemon — just SSH + Claude Code.
+A complete, from-scratch guide to the setup **eli** installs for you: an always-on host — a cheap cloud server, or an old Mac (MacBook / Mac Mini) you own — running a fleet of Claude Code agents, reachable from anywhere over Tailscale, driven from a phone via Termux or Termius. No bot, no custom daemon — just SSH + Claude Code.
 
 > **The whole flow in one line:**
 > Phone (Termux) → `ssh mac` → `claude agents` → one screen with every session across all your projects → attach to the one you want and keep working.
@@ -22,13 +22,14 @@ All server IPs, usernames, and hostnames below are placeholders like `<SERVER_IP
 
 ## 0. What you're building
 
-Three machines, one tailnet:
+Your always-on host plus the phone you steer it from, on one tailnet:
 
 | Machine | Role |
 |---|---|
-| **Cloud server** (Hetzner) | Runs the agents 24/7. The real workhorse. |
-| **Mac** (optional) | A second always-on box / dev machine, also on the tailnet. |
-| **Android phone** (Termux) | Your remote control. SSH in from anywhere. |
+| **Your always-on host — pick ONE:** | |
+| • **Cloud server** (Hetzner) | Runs the agents 24/7. Nothing to keep charged at home. |
+| • **Old Mac at home** (MacBook / Mac Mini) | Same job, on hardware you already own. Keep it plugged in and awake. |
+| **Phone** (Termux / Termius) | Your remote control — SSH in from anywhere over Tailscale. |
 
 They're glued together by **Tailscale** (a zero-config VPN), so every machine can reach every other by a stable private IP — no port-forwarding, no exposing SSH to the public internet.
 

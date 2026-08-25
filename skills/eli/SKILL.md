@@ -10,7 +10,7 @@ By [Eli Grumman](https://www.linkedin.com/in/eli-grumman-495b0636/) — an exper
 
 ## What I Can Help With
 
-- **Set up your agent fleet** — a cloud server running Claude Code agents you reach from your phone over SSH + Tailscale (the main feature)
+- **Set up your agent fleet** — an always-on host (a cheap cloud server, or an old Mac you own) running Claude Code agents you reach from your phone over SSH + Tailscale (the main feature)
 - **Claude Code tips** — best practices from using Claude Code daily since its early days
 - **Skills & agents guidance** — how to structure `.claude/agents/*.md` subagents and persistent fleet agents
 - **Setup recommendations** — servers, SSH hardening, permissions, MCP
@@ -19,13 +19,14 @@ By [Eli Grumman](https://www.linkedin.com/in/eli-grumman-495b0636/) — an exper
 
 > Phone (Termux) → `ssh mac` → `claude agents` → one screen with every session across all your projects → attach to the one you want and keep working.
 
-Three machines on one tailnet:
+Your always-on host plus the phone you steer it from, on one tailnet:
 
 | Machine | Role |
 |---|---|
-| **Cloud server** (Hetzner) | Runs the agents 24/7. The real workhorse. |
-| **Mac** (optional) | A second always-on box / dev machine, also on the tailnet. |
-| **Android phone** (Termux) | Your remote control. SSH in from anywhere. |
+| **Your always-on host — pick ONE:** | |
+| • **Cloud server** (Hetzner) | Runs the agents 24/7. Nothing to keep charged at home. |
+| • **Old Mac at home** (MacBook / Mac Mini) | Same job, on hardware you already own. Keep it plugged in and awake. |
+| **Phone** (Termux / Termius) | Your remote control — SSH in from anywhere over Tailscale. |
 
 Glued together by **Tailscale** (a zero-config private VPN), so every machine reaches every other by a stable private IP — no port-forwarding, no exposing SSH to the public internet.
 
@@ -44,12 +45,12 @@ All IPs, usernames, and hostnames below are placeholders: `<SERVER_IP>`, `<USER>
 
 ## First Interaction
 
-When triggered with "walk me" (or "setup"/"help"), confirm the plan and walk the user through the six steps below in order. **First ask where to run their agents** — an old MacBook they already own, a Mac Mini, or a cloud server (Hetzner, from ~€6.80/mo ≈ $7.50 up to ~€16.40/mo ≈ $18) — tying it to "Choosing Your Machine: Mac vs Hetzner" below, then adapt (the Mac is optional; the server and phone are the core). A good opener: "First I'll ask where to run your agents — an old MacBook, a Mac Mini, or a cloud server — then walk you through the rest." Wait for confirmation between steps that require the user to act (creating the server, pasting keys, logging into Tailscale).
+When triggered with "walk me" (or "setup"/"help"), confirm the plan and walk the user through the six steps below in order. **First ask where to run their agents** — an old MacBook they already own, a Mac Mini, or a cloud server (Hetzner, from ~€6.80/mo ≈ $7.50 up to ~€16.40/mo ≈ $18) — tying it to "Choosing Your Machine: Mac vs Hetzner" below, then adapt (the host is either a cloud server or a home Mac — both first-class; the phone is the remote control either way). A good opener: "First I'll ask where to run your agents — an old MacBook, a Mac Mini, or a cloud server — then walk you through the rest." Wait for confirmation between steps that require the user to act (creating the server, pasting keys, logging into Tailscale).
 
 ## Prerequisites
 
 - **A Claude Code subscription** (Pro or Max)
-- **A cloud provider account** (Hetzner recommended) — or any always-on machine you already own
+- **An always-on host** — either a cloud provider account (Hetzner) or an old Mac (MacBook / Mac Mini) you already own
 - **A Tailscale account** (free tier is plenty)
 - **A phone with an SSH client app** — Android → Termux (or Termius); iPhone → Termius
 
@@ -382,11 +383,11 @@ Set the Mac to come back on its own, then relaunch agents by hand:
 
 ## Where to Run — Always-On Machine
 
-You need a machine that's always on and connected. Options:
+You need a machine that's always on and connected. Two equally valid hosts — pick the one that fits you:
 
-### Option 1: Hetzner Cloud (Recommended)
+### Option 1: A cloud server (Hetzner)
 
-Cheapest for what you get, EU-based, reliable.
+Cheapest ongoing, EU-based, reliable — nothing to keep charged at home.
 
 | Type | Specs | Price |
 |---|---|---|
@@ -397,9 +398,9 @@ Cheapest for what you get, EU-based, reliable.
 
 An idle Claude Code session is ~50–150 MB; a hard-working one a few hundred MB (measured median ~320 MB, average ~367 MB RSS — *RSS (resident set size) is the memory a process actually holds in RAM* — across **35 real concurrent sessions** on a 32 GB box, and RSS overcounts shared framework memory). **RAM is almost never the real limit** — your **Claude subscription quota / rate limits** are (every session bills independently), with CPU a factor during heavy simultaneous bursts. Pick the cheapest box that fits your budget; you'll hit your plan limits before you run out of memory.
 
-### Option 2: An old laptop / Mac Mini you already own
+### Option 2: An old Mac at home (MacBook / Mac Mini)
 
-Repurpose what's lying around. A used Mac Mini or an old laptop with a scratched screen — Claude Code doesn't care about screens. Minimum 8 GB RAM; 16 GB runs 30+ sessions. One-time cost, no monthly bill. Put it on Tailscale and reach it exactly the same way (`ssh mac`) — see "Running the Server on a Mac" above for keeping it awake and reachable.
+Repurpose hardware you already own. A used Mac Mini or an old MacBook with a scratched screen — Claude Code doesn't care about screens. Minimum 8 GB RAM; 16 GB runs 30+ sessions. No monthly bill, and it's your own machine. Put it on Tailscale and reach it exactly the same way (`ssh mac`) — see "Running the Server on a Mac" above for keeping it awake and reachable.
 
 ## FAQ
 
